@@ -639,6 +639,27 @@ Object.assign(ROOMS, {
 ROOMS.arena.bossRoom = true; ROOMS.arena.boss = 'keeper';
 const TOWER_MAP_AREAS = {world: 'Эмберфолл', tower: 'Часовая башня'};
 
+// ---- v23: погасшие фонари, скрытые платформы и потерянные вещи ----
+const LOST_ORDER = ['tag', 'note', 'toy', 'box', 'kettle', 'alarm'];
+const LOST = {
+  tag:    {name: 'Бирка с лампой', text: 'Жестяная бирка с выбитой лампой и числом «1». Имя стёрлось, номер остался.'},
+  note:   {name: 'Обрывок записки', text: '«…если Лампа погаснет, спрячь искру в сумку странника. Пусть идёт и ничего не помнит. Помнить придётся потом. Ф.»'},
+  toy:    {name: 'Заводной гумми', text: 'Жестяной гумми с ключиком. На подошве нацарапано: «Искорке, чтобы не скучала».'},
+  box:    {name: 'Шкатулка без пружины', text: 'Музыкальная шкатулка. Пружина лопнула давно, но мелодию почему-то помнишь.'},
+  kettle: {name: 'Чайник без носика', text: 'Из него наливали чай на двоих. Одна из двух чашек в углу рисунка — совсем маленькая.'},
+  alarm:  {name: 'Ходики без стрелок', text: 'Часы показывают без пяти полночь. Тик бы сказал: время просто ждало, пока его заведут.'}
+};
+const BAG_WHO = ['Пусто. Только меч и ощущение, что ты что-то забыл.', 'Ты кому-то принадлежал. Или кто-то принадлежал тебе.', 'Кто-то писал о тебе. И просил не помнить — до времени.', 'У тебя был кто-то, кто заботился. Даже игрушку оставил.', 'Были вечера, чай и музыка. Тебя ждали дома.', 'Осталась одна вещь. Ответ уже почти слышен.', 'Ты — первая искра Великой Лампы. Фонарщик спрятал тебя в сумке, чтобы город смог загореться снова.'];
+const lostItem = (id, x, y) => ({type: 'lost', id: 'lost_' + id, lost: id, x, y});
+(function () {
+  const R = ROOMS, add = (r, it) => (R[r].items = R[r].items || []).push(it);
+  R.gate.hidden = [{x: 770, y: 215, w: 130}];                      add('gate', lostItem('tag', 835, 181));
+  R.chains.lanterns.push(1800); R.chains.hidden = [{x: 1930, y: 205, w: 130}]; add('chains', lostItem('note', 1995, 171));
+  R.bridge.lanterns.push(2400); R.bridge.hidden = [{x: 2560, y: 195, w: 130}]; add('bridge', lostItem('toy', 2625, 161));
+  R.shaft.hidden = [{x: 440, y: -330, w: 130}];                    add('shaft', lostItem('box', 505, -364));
+  R.spires.lanterns.push(2300); R.spires.hidden = [{x: 2420, y: 200, w: 130}]; add('spires', lostItem('kettle', 2485, 166));
+  R.ante.hidden = [{x: 600, y: 300, w: 110}, {x: 760, y: 215, w: 110}]; add('ante', lostItem('alarm', 815, 181));
+})();
 const ROOM_IDS = Object.keys(ROOMS);
 ROOM_IDS.forEach(id => { ROOMS[id].id = id; });
 const TOTAL_SHARDS = 6, SHARDS_PER_HEART = 3;   // 3 осколка в Эмберфолле (s1, s3, s6) и 3 в Часовой башне (s4, s8, s9)
@@ -797,6 +818,11 @@ const wallObj = {x: 0, y: -300, w: 40, h: 900};
 let P, cam = 0, camY = 0, shake = 0, freeze = 0, swingId = 0, tick = 0, hp = 5, coinsGot = 0, state = 'title', coins = [], enemies = [], lanterns = [], particles = [], jumpHeld = false;
 // ==== Энергошар: снаряды и заряд ====
 let orbs = [], en = ORB_MAX, orbT = 0, enFlash = 0;
+let ghostPlats = [], lanternNear = null, rains = [], mshards = [], bagOpen = false, bagSel = 0, bagBtn = {x: -99, y: -99, w: 0, h: 0};
+const LANTERN_COST = 5, LIGHT_R = 520, M_TOTAL = 4;
+const bulbsLeft = () => coinsGot - ((world && world.spent) || 0);
+const calmAt = x => lanterns.some(l => l.lit && Math.abs(l.x - x) <= LIGHT_R);
+const ghostLit = it => lanterns.some(l => l.lit && Math.abs(l.x - it.x) <= LIGHT_R);
 let room = null, L = [], platArt = [], solids = [], bannerX = [], items = [], levers = [], barriers = [], world = null;
 let trans = null, roomTitleT = 0, toast = null, popup = null, hallFx = null;
 // ==== Переворот мира (комната с флагом flip): flipS — текущий масштаб по вертикали (1 = обычный, -1 = вверх ногами), flipTo — цель ====
@@ -814,7 +840,7 @@ const embers = [];
 const SAVE_KEY = 'forgotten-spires-metroidvania-v1';
 function newWorld() {
   return {ab: {dash: false, dj: false, orb: false}, maxHp: 5, shards: 0, taken: {}, levers: {}, cracks: {}, items: {}, visited: {}, lit: {gate: [true]},
-          cp: {room: 'gate', idx: 0}, bulbs: 0, bossDead: false, clockDead: false, won: false, talk: {}, seen: {}};
+          cp: {room: 'gate', idx: 0}, bulbs: 0, spent: 0, bag: {}, keeperMercy: false, keeperSpared: false, bossDead: false, clockDead: false, won: false, talk: {}, seen: {}};
 }
 function saveGame() {
   if (!world) return;
@@ -841,6 +867,7 @@ function rebuildSolids() {
   barriers.forEach(b => { if (b.kind === 'crack' ? !b.broken : !b.open) solids.push(b); });
   if (room.bossRoom) solids.push({x: ARENA_R, y: -300, w: 80, h: 900});
   movers.forEach(m => solids.push(m));
+  ghostPlats.forEach(h => { if (h.on) solids.push({x: h.x, y: h.y, w: h.w, h: 30}); });
   if (trialLock) solids.push(trialLock);
   if (arenaOn) solids.push(wallObj);
 }
@@ -862,6 +889,9 @@ function loadRoom(id, ax, feetY, face) {
   barriers = (room.barriers || []).filter(b => !(b.kind === 'crack' && world.cracks[b.id])).map(b => ({...b, hp: b.hp || 3, open: b.kind === 'gate' && !!world.levers[b.lever], oy: b.kind === 'gate' && world.levers[b.lever] ? 1 : 0, swing: 0, broken: false}));
   waves = []; booms = []; boss = null; bossIntro = 0; doorMsg = 0; winDelay = 0; particles = []; freeze = 0; arenaOn = false; barT = 0;
   orbs = [];
+  rains = []; mshards = []; lanternNear = null;
+  ghostPlats = (room.hidden || []).map(h => ({...h, a: 0, on: false}));
+  ghostPlats.forEach(h => { if (lanterns.some(l => l.lit && Math.abs(l.x - (h.x + h.w / 2)) <= LIGHT_R)) { h.a = 1; h.on = true; } });
   flipS = flipTo = 1;
   bossDead = !!(room.boss === 'clock' ? world.clockDead : world.bossDead);
   initTowerRoom();
@@ -912,16 +942,49 @@ function startGame(cont) {
   } else loadRoom('gate', 490, 400, 1);
   P.inv = 0; state = 'play'; hintT = sv ? 0 : 700; syncTouchAbilities();
 }
+function lightLantern(l) {
+  if (l.lit) return;
+  const idx = lanterns.indexOf(l), left = bulbsLeft();
+  if (left < LANTERN_COST) { showToast('Нужно ' + LANTERN_COST + ' лампочек, у вас ' + left); sfx.orbEmpty(); return; }
+  world.spent = (world.spent || 0) + LANTERN_COST;
+  l.lit = true; l.ign = 70; (world.lit[room.id] || (world.lit[room.id] = []))[idx] = true; world.cp = {room: room.id, idx};
+  hp = world.maxHp; en = ORB_MAX; orbT = 0; l.rest = 300; sfx.lantern(); shake = Math.max(shake, 4);
+  const px = P.x + P.w / 2, py = P.y + 20, ty = GROUND_Y - 170;
+  for (let i = 0; i < LANTERN_COST; i++) particles.push({x: px, y: py, vx: (l.x - px) / 28 + (Math.random() - 0.5) * 1.4, vy: (ty - py) / 28 + (Math.random() - 0.5) * 1.4, g: 0, life: 28, max: 28, r: 3.4, col: 'rgba(255,226,120,1)', add: true});
+  puff(l.x, GROUND_Y - 158, 24, 'rgba(255,200,120,1)', 2.6, true);
+  const hid = ghostPlats.some(h => !h.on && Math.abs(l.x - (h.x + h.w / 2)) <= LIGHT_R);
+  const calm = enemies.some(e => !e.trial && !(e.dead > 0) && Math.abs(e.x - l.x) <= LIGHT_R);
+  showToast(hid ? 'Фонарь горит — свет проявил что-то скрытое' : calm ? 'Фонарь горит — гумми успокоились' : 'Фонарь горит — город вспоминает свет');
+  saveGame();
+}
+function updateGhosts() {
+  let ch = false;
+  for (const h of ghostPlats) {
+    const want = lanterns.some(l => l.lit && Math.abs(l.x - (h.x + h.w / 2)) <= LIGHT_R);
+    if (want && h.a < 1) h.a = Math.min(1, h.a + 0.025); else if (!want && h.a > 0) h.a = Math.max(0, h.a - 0.025);
+    const on = h.a >= 0.6;
+    if (on !== h.on) { h.on = on; ch = true; if (on) { sfx.lantern(); puff(h.x + h.w / 2, h.y, 14, 'rgba(255,210,140,1)', 2.4, true); } }
+  }
+  if (ch) rebuildSolids();
+}
 function showToast(text) { toast = {text, t: 170}; }
 function showPopup(title, sub, col) { popup = {title, sub, col, t: 300}; }
 
 // ---------- предметы, рычаги, трещины ----------
+const bagCount = () => LOST_ORDER.filter(k => world && world.bag && world.bag[k]).length;
 function collectItem(it) {
   it.got = true; world.items[it.id] = true; freeze = 24; sfx.power();
-  puff(it.x, it.y, 40, it.type === 'dash' ? 'rgba(150,230,255,1)' : it.type === 'dj' ? 'rgba(255,230,150,1)' : it.type === 'orb' ? 'rgba(255,190,80,1)' : 'rgba(255,110,120,1)', 4.5, true);
+  puff(it.x, it.y, 40, it.type === 'dash' ? 'rgba(150,230,255,1)' : it.type === 'dj' ? 'rgba(255,230,150,1)' : it.type === 'orb' ? 'rgba(255,190,80,1)' : it.type === 'lost' ? 'rgba(255,226,160,1)' : 'rgba(255,110,120,1)', 4.5, true);
   if (it.type === 'dash') { world.ab.dash = true; showPopup('РЫВОК', touchMode ? 'Кнопка рывка — стремительный бросок вперёд' : 'Shift — стремительный бросок вперёд. Неуязвим на время рывка', '#8fe8ff'); }
   else if (it.type === 'dj') { world.ab.dj = true; showPopup('ДВОЙНОЙ ПРЫЖОК', touchMode ? 'Нажмите кнопку прыжка ещё раз в воздухе' : 'Нажмите прыжок ещё раз в воздухе', '#ffe9a0'); }
   else if (it.type === 'orb') { world.ab.orb = true; showPopup('ЭНЕРГОШАР', (it.reward ? 'Награда за Хранителя. ' : '') + (touchMode ? 'Кнопка с шаром — метнуть шар. 3 заряда, 1 заряд — 7 с' : 'C / L / ПКМ — метнуть шар. 3 заряда, 1 заряд — 7 с'), '#ffb43a'); }
+  else if (it.type === 'lost') {
+    world.bag = world.bag || {}; world.bag[it.lost] = true; const n = bagCount(), info = LOST[it.lost];
+    showPopup(info.name.toUpperCase(), info.text.length > 70 ? info.text.slice(0, info.text.indexOf(' ', 60)) + '…' : info.text, '#ffe2a0');
+    if (n >= LOST_ORDER.length) setTimeout(() => showToast('Сумка полна — загляни в неё (B) и покажи Моху'), 2600);
+    else showToast('Сумка: ' + n + ' / ' + LOST_ORDER.length + ' — открыть: ' + (touchMode ? 'карта → сумка' : 'B'));
+    sfx.lantern();
+  }
   else {
     world.shards = (world.shards || 0) + 1;
     if (world.shards % SHARDS_PER_HEART === 0) { world.maxHp++; hp = world.maxHp; showPopup('ДОБАВИЛОСЬ СЕРДЦЕ', 'Три осколка срослись. Здоровье: ' + world.maxHp, '#ff8a96'); sfx.lantern(); }
@@ -966,7 +1029,7 @@ function hitCrack(b) {
 }
 
 // ---------- карта и меню ----------
-function toggleMap() { if (state === 'play') { state = 'map'; mapArea = room.area || 'world'; } else if (state === 'map') state = 'play'; }
+function toggleMap() { if (state === 'play') { state = 'map'; bagOpen = false; mapArea = room.area || 'world'; } else if (state === 'map') state = 'play'; }
 function onConfirm() {
   if (state === 'title') startGame(hasSave());
   else if (state === 'talk') dlgAdvance();
@@ -992,9 +1055,11 @@ addEventListener('keydown', e => {
   if (e.code === 'Enter') onConfirm();
   if (e.code === 'Tab') { e.preventDefault(); toggleMap(); }
   if (e.code === 'KeyN') { if (state === 'title') startGame(false); else toggleMap(); }
-  if (e.code === 'Escape' && state === 'map') state = 'play';
-  if (state === 'map' && (e.code === 'ArrowLeft' || e.code === 'KeyA')) switchMapArea(-1);
-  if (state === 'map' && (e.code === 'ArrowRight' || e.code === 'KeyD')) switchMapArea(1);
+  if (e.code === 'Escape' && state === 'map') { state = 'play'; bagOpen = false; }
+  if (e.code === 'KeyB' && !e.repeat) { if (state === 'play') { state = 'map'; bagOpen = true; mapArea = room.area || 'world'; } else if (state === 'map') bagOpen = !bagOpen; }
+  if (state === 'map' && bagOpen) { if (e.code === 'ArrowUp' || e.code === 'KeyW') bagSel = (bagSel + 5) % 6; if (e.code === 'ArrowDown' || e.code === 'KeyS') bagSel = (bagSel + 1) % 6; }
+  if (state === 'map' && !bagOpen && (e.code === 'ArrowLeft' || e.code === 'KeyA')) switchMapArea(-1);
+  if (state === 'map' && !bagOpen && (e.code === 'ArrowRight' || e.code === 'KeyD')) switchMapArea(1);
   if (e.code === 'KeyE' && !e.repeat) { if (state === 'talk') dlgAdvance(); else tryTalk(); }
   if (state === 'talk') {
     if (e.code === 'Space' && !e.repeat) dlgAdvance();
@@ -1075,6 +1140,16 @@ cv.addEventListener('pointerdown', e => {
     const b = titleButtons().find(b => px >= b.x && px <= b.x + b.w && py >= b.y && py <= b.y + b.h); if (b) b.act(); return;
   }
   if (state === 'talk') { e.preventDefault(); talkPointer(px, py); return; }
+  if (state === 'map' && !aboutOpen) {
+    const hit = r => px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h;
+    if (bagOpen) {
+      e.preventDefault();
+      if (hit({x: 60, y: VH - 62, w: 150, h: 36})) { bagOpen = false; return; }
+      for (let i = 0; i < 6; i++) if (hit(BAG_ROW(i))) { bagSel = i; return; }
+      return;
+    }
+    if (hit(bagBtn)) { e.preventDefault(); bagOpen = true; return; }
+  }
   if (state === 'map') {
     if (aboutOpen) { e.preventDefault(); aboutOpen = false; return; }
     const vb = VER_BOX_MAP; if (px >= vb.x && px <= vb.x + vb.w && py >= vb.y && py <= vb.y + vb.h) { e.preventDefault(); aboutOpen = true; return; }
@@ -1107,7 +1182,7 @@ function dust(x, y, n, spd) {
 }
 function hurt(srcX, pit) {
   if ((P.inv > 0 || P.dash > 0) && !pit) return;
-  hp--; shake = 12; sfx.hit(); P.idle = 0;
+  hp--; shake = 12; sfx.hit(); P.idle = 0; if (P.carry) dropCarry();
   if (hp <= 0) { hp = 0; die(); return; }
   if (pit) {      // упал в провал — возвращаемся на последнюю надёжную опору в этой комнате
     P.x = P.safe.x; P.y = P.safe.y; P.vx = 0; P.vy = 0; P.inv = 90; P.stun = 0; P.dash = 0; P.djUsed = false;
@@ -1143,7 +1218,7 @@ function swordHit() {
   for (const lv of levers) if (!lv.on && lv.swing !== p.swing && hitR(box, {x: lv.x - 22, y: lv.y - 64, w: 44, h: 64})) { lv.swing = p.swing; pullLever(lv); }
   for (let i = enemies.length - 1; i >= 0; i--) {
     const e = enemies[i];
-    if (e.dead > 0 || e.swing === p.swing || !hitR(box, e)) continue;
+    if (e.dead > 0 || e.calm || e.swing === p.swing || !hitR(box, e)) continue;
     e.swing = p.swing; e.hp--; e.flash = 8; e.kb = p.face * 7; freeze = 4; shake = Math.max(shake, 5); sfx.clang();
     puff(e.x + e.w / 2, e.y + 16, 10, 'rgba(255,240,200,1)', 3, true);
     if (e.hp <= 0) {
@@ -1169,7 +1244,7 @@ function updateOrbs() {
       damageBoss(ORB_DMG); dead = true;
     }
     if (!dead) for (const e of enemies) {
-      if (e.dead > 0) continue;
+      if (e.dead > 0 || e.calm) continue;
       if (hitR(box, e)) {
         e.hp -= ORB_DMG; e.flash = 8; e.kb = (o.vx > 0 ? 1 : -1) * 7; freeze = 4; shake = Math.max(shake, 5); sfx.orbHit();
         if (e.hp <= 0) { killGummy(e); coinsGot += 2; sfx.coin(); }
@@ -1297,14 +1372,12 @@ function update() {
   if (p.y > 540 + 40 && room.fallTo && p.x + 12 >= room.fallTo.x0 && p.x + 12 <= room.fallTo.x1) { goExit(room.fallTo); return; }
   if (p.y > 540 + 80) { hurt(0, true); if (state !== 'play') return; }
 
+  lanternNear = null;
   for (const l of lanterns) {
-    if (l.rest > 0) l.rest--;
+    if (l.rest > 0) l.rest--; if (l.ign > 0) l.ign--;
     if (Math.abs(p.x + p.w / 2 - l.x) < 45 && p.onGround) {
       const idx = lanterns.indexOf(l);
-      if (!l.lit) {
-        l.lit = true; (world.lit[room.id] || (world.lit[room.id] = []))[idx] = true; world.cp = {room: room.id, idx};
-        hp = world.maxHp; en = ORB_MAX; orbT = 0; l.rest = 300; sfx.lantern(); showToast('Фонарь зажжён — прогресс сохранён'); saveGame();
-        puff(l.x, GROUND_Y - 158, 18, 'rgba(255,200,120,1)', 2.2, true);
+      if (!l.lit) { lanternNear = l;
       } else if (l.rest <= 0 && (hp < world.maxHp || world.cp.room !== room.id || world.cp.idx !== idx)) {
         world.cp = {room: room.id, idx}; hp = world.maxHp; en = ORB_MAX; orbT = 0; l.rest = 300; sfx.lantern(); showToast('Отдых у фонаря — здоровье восстановлено'); saveGame();
         puff(l.x, GROUND_Y - 158, 14, 'rgba(255,200,120,1)', 2, true);
@@ -1314,8 +1387,8 @@ function update() {
   for (const c of coins) if (!c.got && Math.hypot(p.x + p.w / 2 - c.x, p.y + p.h / 2 - c.y) < 26) {
     c.got = true; world.taken[room.id][c.i] = true; coinsGot++; sfx.coin(); puff(c.x, c.y, 10, 'rgba(255,210,110,1)', 2, true);
   }
-  updateOrbReward();
-  for (const it of items) if (!it.got && Math.hypot(p.x + p.w / 2 - it.x, p.y + p.h / 2 - it.y) < 40) collectItem(it);
+  updateOrbReward(); updateGhosts();
+  for (const it of items) if (!it.got && (!it.lost || ghostLit(it)) && Math.hypot(p.x + p.w / 2 - it.x, p.y + p.h / 2 - it.y) < 40) collectItem(it);
   for (const lv of levers) if (lv.on && lv.anim < 1) lv.anim = Math.min(1, lv.anim + 0.08);
   for (const b of barriers) if (b.kind === 'gate' && b.open && b.oy < 1) b.oy = Math.min(1, b.oy + 0.02);
   for (let i = enemies.length - 1; i >= 0; i--) {
@@ -1325,14 +1398,14 @@ function update() {
     if (e.dead > 0) { e.x += e.kb; e.kb *= 0.85; if (--e.dead <= 0) enemies.splice(i, 1); continue; }
     // гумми догоняет игрока, если тот рядом и на одной высоте, иначе патрулирует
     const ex = e.x + e.w / 2, px = p.x + p.w / 2, dist = px - ex;
-    e.chase = Math.abs(dist) < 230 && p.y + p.h > e.y - 30 && p.y < e.y + e.h + 20 && px > e.min - 30 && px < e.max + 30 && e.flash === 0;
+    e.calm = calmAt(ex); e.chase = !e.calm && Math.abs(dist) < 230 && p.y + p.h > e.y - 30 && p.y < e.y + e.h + 20 && px > e.min - 30 && px < e.max + 30 && e.flash === 0;
     if (e.chase) { e.vx = (dist < 0 ? -1 : 1) * 1.9; e.atk = Math.abs(dist) < 80 ? e.atk + 1 : 0; }
-    else { e.vx = (e.vx < 0 ? -1 : 1) * 0.9; e.atk = 0; }
+    else { e.vx = (e.vx < 0 ? -1 : 1) * (e.calm ? 0.45 : 0.9); e.atk = 0; }
     e.x += e.vx + e.kb; e.ph += e.chase ? 0.26 : 0.15; e.kb *= 0.85; if (Math.abs(e.kb) < 0.1) e.kb = 0;
     e.x = Math.max(e.min, Math.min(e.max - e.w, e.x));
     if (!e.chase && ((e.x <= e.min && e.vx < 0) || (e.x + e.w >= e.max && e.vx > 0))) e.vx *= -1;
     if (e.vx) e.f = e.vx > 0 ? 1 : -1;
-    if (hitR(p, e)) {
+    if (!e.calm && hitR(p, e)) {
       if (p.vy > 0 && p.y + p.h - p.vy <= e.y + 14) {
         killGummy(e); p.vy = jd ? -11.5 : -8.5; sfx.stomp(); p.djUsed = false;
       } else { const hp0 = hp; hurt(e.x + e.w / 2, false); if (room.flip && hp < hp0) flipWorld(); if (state !== 'play') return; }
@@ -1341,6 +1414,7 @@ function update() {
   updateHazards(p); if (state !== 'play') return;
   updateTrial(p);
   if (room.id === 'arena') {
+    if (!boss && bossDead && world.keeperSpared) boss = {x: ARENA_CAM + 600, y: GROUND_Y, vx: 0, vy: 0, hp: 8, max: 32, disp: 8, state: 'sleep', t: 0, face: -1, flash: 0, rage: false, n: 0, ph: 0, stompCd: 0, swing: 0, hasBlade: false, hasBlade2: false, hops: 0, teleLen: 24, isSlam: false, second: 0, last: '', returned: M_TOTAL, spawned: M_TOTAL, say: null};
     if (!boss && !bossDead && p.x > TRIGGER_X) startBoss();
     updateBoss();
     if (state !== 'play') return;
@@ -1365,7 +1439,7 @@ function update() {
     if (Math.abs(p.x + p.w / 2 - n.x) < 100 && Math.abs(p.y + p.h - n.y) < 125 && p.onGround) talkTarget = n;
     if (tick % 26 === 0 && Math.abs(n.x - (cam + VW / 2)) < VW) particles.push({x: n.x + (Math.random() - 0.5) * 60, y: n.y - 20 - Math.random() * 60, vx: (Math.random() - 0.5) * 0.3, vy: -0.28, g: 0, life: 70, max: 70, r: 1.8, col: n.kind === 'robot' ? 'rgba(255,170,120,1)' : 'rgba(190,255,120,1)', add: true});
   }
-  syncTalkBtn(!!talkTarget);
+  syncTalkBtn(!!talkTarget || !!lanternNear);
   const target = arenaOn && !room.arenaFollow ? ARENA_CAM : p.x + p.w / 2 + p.face * 60 - VW * 0.42;
   cam += (target - cam) * 0.08; cam = Math.max(0, Math.min(room.w - VW, cam));
   const ty = p.y + p.h / 2 - VH * 0.58;
@@ -1474,6 +1548,8 @@ function drawLantern(l) {
   ctx.fill(); ctx.stroke();
   ctx.fillStyle = '#14101c'; ctx.beginPath(); ctx.moveTo(-15, -176); ctx.lineTo(0, -192); ctx.lineTo(15, -176); ctx.closePath(); ctx.fill(); ctx.stroke();
   ctx.beginPath(); ctx.arc(0, -196, 3.5, 0, 7); ctx.stroke();
+  if (!l.lit) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.25 + 0.2 * Math.sin(tick * 0.06 + l.x); ctx.fillStyle = '#ff9a4a'; ctx.beginPath(); ctx.arc(0, -162, 4, 0, 7); ctx.fill(); ctx.restore(); }
+  if (l.ign > 0) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = l.ign / 70; ctx.drawImage(glowWarm, -130, -162 - 130, 260, 260); ctx.strokeStyle = 'rgba(255,226,150,0.8)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, -162, 20 + (70 - l.ign) * 2.4, 0, 7); ctx.stroke(); ctx.restore(); }
   ctx.restore();
 }
 function bulbBody() {
@@ -1485,6 +1561,33 @@ function bulbBody() {
   ctx.fillStyle = g; ctx.fill(); ctx.stroke();
   ctx.strokeStyle = '#ff8a2a'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-2, 7); ctx.lineTo(-2, -2); ctx.lineTo(0, -5); ctx.lineTo(2, -2); ctx.lineTo(2, 7); ctx.stroke();
   ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.ellipse(-5, -6, 2, 3.5, -0.5, 0, 7); ctx.fill();
+}
+function drawLanternPrompt(t) {
+  const l = lanternNear; if (!l || state !== 'play') return;
+  const ok = bulbsLeft() >= LANTERN_COST, txt = (touchMode ? 'Кнопка речи' : 'E') + ' — зажечь · ' + LANTERN_COST + ' ламп.' + (ok ? '' : ' (у вас ' + bulbsLeft() + ')');
+  ctx.save(); ctx.font = '600 15px Georgia, serif'; ctx.textAlign = 'center'; const w = ctx.measureText(txt).width + 26, y = GROUND_Y - 236 + Math.sin(t * 0.08) * 2;
+  ctx.fillStyle = 'rgba(14,10,24,0.82)'; rrect(l.x - w / 2, y - 18, w, 28, 14); ctx.fill(); ctx.strokeStyle = ok ? '#ffe2a0' : '#8a7658'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = ok ? '#ffe9b0' : '#b8a888'; ctx.fillText(txt, l.x, y + 2); ctx.restore();
+}
+function drawGhostPlats(t) {
+  for (const h of ghostPlats) {
+    if (!h.art) h.art = buildPlatform({x: h.x, y: h.y, w: h.w}, 777 + (h.x % 97), room.theme);
+    if (h.a > 0) { ctx.save(); ctx.globalAlpha = h.a; ctx.drawImage(h.art.cv, h.x - h.art.ox, h.y - h.art.oy); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - h.a) * h.a * 3; ctx.drawImage(glowWarm, h.x + h.w / 2 - 110, h.y - 70, 220, 140); ctx.restore(); }
+    if (h.a < 1 && Math.abs(P.x + P.w / 2 - (h.x + h.w / 2)) < 420) {
+      ctx.save(); ctx.globalAlpha = (0.2 + 0.14 * Math.sin(t * 0.08 + h.x)) * (1 - h.a); ctx.strokeStyle = '#ffe6c0'; ctx.lineWidth = 1.5; ctx.setLineDash([6, 8]); ctx.strokeRect(h.x, h.y, h.w, 12); ctx.restore();
+    }
+  }
+}
+function drawLostItem(it, t) {
+  if (!ghostLit(it)) return;
+  const bob = Math.sin(t * 0.06 + it.x) * 3;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.45 + 0.15 * Math.sin(t * 0.1); ctx.drawImage(glowGold, it.x - 36, it.y + bob - 36, 72, 72); ctx.restore();
+  drawLostIcon(it.lost, it.x, it.y + bob, 1.5);
+}
+function drawCalmMark(e) {
+  if (!e.calm || e.dead > 0) return;
+  const k = (tick * 0.3) % 22, x = e.x + e.w / 2 + 8, y = e.y - 4 - k;
+  ctx.save(); ctx.globalAlpha = 0.75 * (1 - k / 22); ctx.font = 'italic 700 16px Georgia, serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffe2a0'; ctx.fillText('z', x, y); ctx.restore();
 }
 function drawBulb(c, i, t) {
   const bob = Math.sin(t * 0.05 + i) * 3, sw = Math.sin(t * 0.03 + i * 2) * 0.12, fl = 0.8 + 0.2 * Math.sin(t * 0.17 + i * 3);
@@ -1799,15 +1902,59 @@ function unlockArena() { arenaOn = false; const i = solids.indexOf(wallObj); if 
 function startBoss() {
   lockArena(); bossIntro = 220; shake = 14; sfx.boom();
   boss = {x: ARENA_CAM + 600, y: -140, vx: 0, vy: 0, hp: 32, max: 32, disp: 32, state: 'enter', t: 0, face: -1, flash: 0, rage: false,
-          n: 0, ph: 0, stompCd: 0, swing: 0, hasBlade: true, hasBlade2: false, hops: 0, teleLen: 24, isSlam: false, second: 0};
+          n: 0, ph: 0, stompCd: 0, swing: 0, hasBlade: true, hasBlade2: false, hops: 0, teleLen: 24, isSlam: false, second: 0, last: '', returned: 0, spawned: 0, say: null};
+  if (world.keeperMercy) { boss.hp = Math.ceil(boss.max * 0.25); boss.disp = boss.hp; boss.rage = true; boss.pendingMercy = true; }
 }
 const hurtBox = () => boss.kind === 'clock' ? clockHurtBox() : ({x: boss.x - 48, y: boss.y - 192, w: 96, h: 142});
 function damageBoss(n) {
   if (boss.kind === 'clock') { damageClock(n); return; }
-  const b = boss; b.hp -= n; b.flash = 8; freeze = Math.max(freeze, 4); shake = Math.max(shake, 6); sfx.clang();
+  const b = boss; if (['falter', 'mercy', 'quiet', 'sleep', 'dying', 'dead'].includes(b.state)) return;
+  b.hp -= n; b.flash = 8; freeze = Math.max(freeze, 4); shake = Math.max(shake, 6); sfx.clang();
   puff(b.x, b.y - 120, 12, 'rgba(230,255,200,1)', 3.2, true);
-  if (b.hp <= 0) { b.hp = 0; b.state = 'dying'; b.t = 0; b.vx = 0; waves = []; booms = []; shake = 20; sfx.roar(); }
+  if (b.hp <= Math.ceil(b.max * 0.25)) { startMercy(b); return; }
   else if (!b.rage && b.hp <= b.max / 2) { b.rage = true; b.state = 'roar'; b.t = 0; booms = []; b.hasBlade = true; b.hasBlade2 = true; b.second = 0; shake = 18; sfx.roar(); }
+}
+const MERCY_LINES = ['…это… не моё?', '…мне казалось, свет можно взять.', '…его можно только отдать.', '…спасибо, что вернул.'];
+function startMercy(b) {
+  b.hp = Math.ceil(b.max * 0.25); b.disp = b.hp; b.state = 'falter'; b.t = 0; b.vx = 0; b.mercy = true; b.hasBlade = false; b.hasBlade2 = false;
+  b.returned = 0; b.spawned = 0; waves = []; booms = []; rains = []; shake = 16; sfx.roar(); freeze = Math.max(freeze, 8);
+  world.keeperMercy = true; b.say = {text: 'Я только хотел, чтобы стало светло…', t: 200};
+  showPopup('ХРАНИТЕЛЬ РОНЯЕТ ОСКОЛКИ', 'Подними осколок и верни ему — он больше не нападает', '#c8f08a');
+}
+function dropCarry() { const s = P.carry; if (s) { s.st = 'fall'; s.vy = -5; s.x = P.x + P.w / 2; s.y = P.y; P.carry = null; showToast('Осколок выпал — подними снова'); } }
+function rainAttack(n, warn) {
+  const px = P.x + P.w / 2;
+  for (let i = 0; i < n; i++) { const x = Math.max(ARENA_L + 40, Math.min(ARENA_R - 40, px + (i - (n - 1) / 2) * 120 + (Math.random() - 0.5) * 50)); rains.push({x, st: 'warn', t: 0, warn: warn + i * 5, y: 0, vy: 0}); }
+}
+function finishMercy(b) {
+  b.state = 'sleep'; b.t = 0; bossDead = true; world.keeperSpared = true; world.keeperMercy = false; unlockArena(); doorMsg = 220; coinsGot += 25;
+  sfx.lantern(); sfx.coin(); puff(b.x, b.y - 100, 36, 'rgba(255,230,160,1)', 4, true); shake = 8;
+  showPopup('ХРАНИТЕЛЬ ЗАСНУЛ', 'Свет нельзя украсть — его можно только отдать', '#ffe9b0');
+}
+function mercyTick(b) {
+  const p = P, px = p.x + p.w / 2;
+  if (b.say && --b.say.t <= 0) b.say = null;
+  for (let i = rains.length - 1; i >= 0; i--) {
+    const r = rains[i]; r.t++;
+    if (r.st === 'warn') { if (r.t > r.warn) { r.st = 'fall'; r.y = -30; r.vy = 4; } continue; }
+    r.vy = Math.min(r.vy + 0.5, 13); r.y += r.vy;
+    if (hitR(p, {x: r.x - 11, y: r.y - 26, w: 22, h: 52})) { rains.splice(i, 1); puff(r.x, r.y, 8, 'rgba(210,255,150,1)', 2.6, true); hurt(r.x, false); if (state !== 'play') return; continue; }
+    if (r.y >= GROUND_Y - 8) { puff(r.x, GROUND_Y, 8, 'rgba(210,255,150,0.9)', 2.4, true); rains.splice(i, 1); }
+  }
+  for (let i = mshards.length - 1; i >= 0; i--) {
+    const s = mshards[i];
+    if (s.st === 'fall') { s.vy += 0.45; s.y += s.vy; if (s.y >= GROUND_Y - 14) { s.y = GROUND_Y - 14; s.vy = 0; s.st = 'ground'; puff(s.x, GROUND_Y - 6, 8, 'rgba(255,235,160,1)', 2, true); } }
+    else if (s.st === 'ground' && !p.carry && b.state === 'mercy' && hitR(p, {x: s.x - 20, y: s.y - 26, w: 40, h: 56})) { s.st = 'carried'; p.carry = s; sfx.coin(); }
+    else if (s.st === 'carried') { s.x = px; s.y = p.y - 16 + Math.sin(tick * 0.1) * 3; }
+  }
+  if (p.carry && b.state === 'mercy') {
+    const hb = hurtBox();
+    if (hitR(p, {x: hb.x - 34, y: hb.y, w: hb.w + 68, h: hb.h + 20})) {
+      mshards.splice(mshards.indexOf(p.carry), 1); p.carry = null; b.returned++; sfx.lantern(); shake = 7;
+      puff(b.x, b.y - 100, 20, 'rgba(255,235,160,1)', 3.4, true); b.say = {text: MERCY_LINES[b.returned - 1], t: 170};
+      if (b.returned >= M_TOTAL) { b.state = 'quiet'; b.t = 0; rains = []; }
+    }
+  }
 }
 function slamWaves() {
   const b = boss, sp = b.rage ? 5.5 : 4.5;
@@ -1824,20 +1971,26 @@ function throwBoom(src) {
   noiseBurst(0.3, 600, 1800, 0.15);
 }
 function pickAttack() {
-  const b = boss, seq = b.rage ? ['jump', 'throw', 'jump', 'throw', 'throw'] : ['jump', 'throw', 'throw', 'jump'];
-  const a = seq[b.n++ % seq.length]; b.t = 0;
+  const b = boss, dist = Math.abs(P.x + P.w / 2 - b.x);
+  let pool = ['jump', 'throw', 'charge', 'rain'];
+  if (dist < 240) pool.push('jump', 'charge'); else pool.push('throw', 'throw', 'rain');
+  if (b.rage) pool.push('rain', 'charge', 'jump');
+  pool = pool.filter(x => x !== b.last);
+  const a = pool[Math.floor(Math.random() * pool.length)]; b.last = a; b.t = 0; b.n++;
   if (a === 'throw') b.state = 'tele_throw';
+  else if (a === 'charge') b.state = 'tele_charge';
+  else if (a === 'rain') b.state = 'tele_rain';
   else { b.state = 'tele_jump'; b.hops = b.rage ? 2 : 1; b.teleLen = b.rage ? 16 : 24; }
 }
 function updateBoss() {
   const b = boss;
-  if (!b || b.state === 'dead') { waves.length = 0; booms.length = 0; return; }
+  if (!b || b.state === 'dead') { waves.length = 0; booms.length = 0; rains.length = 0; return; }
   b.t++; if (b.flash > 0) b.flash--; if (b.stompCd > 0) b.stompCd--;
   const p = P, px = p.x + p.w / 2, sp = b.rage ? 1.1 : 1, clampX = () => { b.x = Math.max(ARENA_L + 70, Math.min(ARENA_R - 70, b.x)); };
   switch (b.state) {
     case 'enter':
       b.vy += 0.8; b.y += b.vy;
-      if (b.y >= GROUND_Y) { b.y = GROUND_Y; b.vy = 0; shake = 22; slamWaves(); b.state = 'idle'; b.t = 0; }
+      if (b.y >= GROUND_Y) { b.y = GROUND_Y; b.vy = 0; shake = 22; slamWaves(); b.state = 'idle'; b.t = 0; if (b.pendingMercy) { b.pendingMercy = false; startMercy(b); } }
       break;
     case 'idle': b.face = px < b.x ? -1 : 1; if (b.t > (b.rage ? 30 : 55)) pickAttack(); break;
     case 'tele_throw':
@@ -1865,6 +2018,37 @@ function updateBoss() {
       }
       break;
     case 'land': if (b.t > 45) { b.state = 'idle'; b.t = 0; } break;
+    case 'tele_charge':
+      b.face = px < b.x ? -1 : 1;
+      if (b.t > (b.rage ? 22 : 32)) { b.vx = b.face * (b.rage ? 11.5 : 9.5); b.state = 'charge'; b.t = 0; sfx.boom(); }
+      break;
+    case 'charge':
+      b.x += b.vx; if (b.t % 3 === 0) puff(b.x - b.face * 40, GROUND_Y, 2, 'rgba(160,140,190,0.7)', 2);
+      if (b.x <= ARENA_L + 70 || b.x >= ARENA_R - 70) { clampX(); b.vx = 0; shake = 14; sfx.boom(); puff(b.x, GROUND_Y - 60, 16, 'rgba(160,140,190,0.8)', 3.4); b.state = 'stun'; b.t = 45; }
+      else if (b.t > 120) { b.vx = 0; b.state = 'idle'; b.t = 0; }
+      break;
+    case 'tele_rain':
+      b.face = px < b.x ? -1 : 1;
+      if (b.t > (b.rage ? 26 : 36)) { rainAttack(b.rage ? 6 : 4, 40); b.state = 'rain'; b.t = 0; tone(300, 700, 0.3, 'sawtooth', 0.05); }
+      break;
+    case 'rain': if ((b.t > 70 && rains.length === 0) || b.t > 260) { rains.length = 0; b.state = 'idle'; b.t = 0; } break;
+    case 'falter':
+      if (b.t % 9 === 0) puff(b.x + (Math.random() - 0.5) * 100, b.y - 60 - Math.random() * 100, 2, 'rgba(190,255,130,1)', 1.4, true);
+      if (b.t === 40) { shake = 8; sfx.boom(); }
+      if (b.t > 90) { b.state = 'mercy'; b.t = 0; }
+      break;
+    case 'mercy':
+      if (b.spawned < M_TOTAL && b.t % 45 === 10) {
+        const side = b.spawned % 2 ? 1 : -1, x = Math.max(ARENA_L + 60, Math.min(ARENA_R - 60, b.x + side * (170 + Math.random() * 230)));
+        mshards.push({x, y: -30, vy: 0, st: 'fall'}); b.spawned++; sfx.orbCharge();
+      }
+      if (b.spawned >= 1 && b.t % (b.returned >= 2 ? 80 : 110) === 70) rainAttack(b.returned >= 2 ? 2 : 1, 55);
+      break;
+    case 'quiet':
+      if (b.t % 14 === 0) puff(b.x + (Math.random() - 0.5) * 80, b.y - 120, 2, 'rgba(255,235,160,1)', 1.2, true);
+      if (b.t > 150) finishMercy(b);
+      break;
+    case 'sleep': break;
     case 'stun':
       if (b.t % 12 === 0) puff(b.x, b.y - 190, 2, 'rgba(255,230,120,1)', 1.2, true);
       if (b.t > 100) { b.hasBlade = true; b.hasBlade2 = b.rage; b.state = 'idle'; b.t = 0; }
@@ -1897,6 +2081,7 @@ function updateBoss() {
       }
       break;
   }
+  mercyTick(b); if (state !== 'play') return;
   // ударные волны от приземления
   for (let i = waves.length - 1; i >= 0; i--) {
     const w = waves[i]; w.x += w.dir * w.sp; w.life--;
@@ -1933,7 +2118,7 @@ function updateBoss() {
     if (m.state !== 'reflected' && hitR(p, {x: m.x - 17, y: m.y - 17, w: 34, h: 34})) { hurt(m.x, false); if (state !== 'play') return; }
   }
   // контакт с боссом
-  if (['idle', 'tele_throw', 'throw', 'tele_jump', 'air', 'roar'].includes(b.state)) {
+  if (['idle', 'tele_throw', 'throw', 'tele_jump', 'air', 'roar', 'tele_charge', 'charge', 'tele_rain', 'rain'].includes(b.state)) {
     const hb = hurtBox();
     if (hitR(p, hb)) {
       if (p.vy > 0 && p.y + p.h - p.vy <= hb.y + 14 && b.stompCd <= 0) { b.stompCd = 30; p.vy = -13; damageBoss(2); }
@@ -1955,7 +2140,7 @@ function drawBlade(x, y, rot, k, hot) {
 }
 function drawBoss(b, t) {
   if (b.state === 'dead') return;
-  const f = b.face, tele = b.state === 'tele_throw' || b.state === 'tele_jump' || b.state === 'roar' || (b.state === 'dying' && b.t >= 75 && b.t < 125), rage = b.rage;
+  const f = b.face, tele = b.state === 'tele_charge' || b.state === 'tele_rain' || b.state === 'tele_throw' || b.state === 'tele_jump' || b.state === 'roar' || (b.state === 'dying' && b.t >= 75 && b.t < 125), rage = b.rage && !['falter', 'mercy', 'quiet', 'sleep'].includes(b.state);
   const fl = b.flash > 0 || (b.state === 'dying' && b.t < 14 && Math.floor(b.t / 3) % 2 === 0);
   let e = 1, sy = 1, amp = 1, droop = 0;
   switch (b.state) {
@@ -1964,6 +2149,13 @@ function drawBoss(b, t) {
     case 'land': e = 0.8; sy = 0.93; break;
     case 'stun': e = 0.72; amp = 0.4; break;
     case 'enter': e = 1.3; break;
+    case 'tele_charge': e = 0.62; sy = 0.9; amp = 0.25; break;
+    case 'charge': e = 1.15; sy = 0.97; break;
+    case 'tele_rain': e = 1.2; sy = 1.04; amp = 1.6; break;
+    case 'falter': case 'mercy': case 'quiet': case 'sleep': {
+      const k = b.state === 'falter' ? Math.min(1, b.t / 60) : 1, q = k * k * (3 - 2 * k);
+      e = 1 - 0.42 * q; sy = 1 - 0.2 * q; amp = b.state === 'sleep' ? 0.12 : 1.3 - q * 0.9; droop = 0.3 * q; break;
+    }
     case 'dying': {
       const T = b.t;
       if (T < 75) { const k = Math.min(1, T / 60), q = k * k * (3 - 2 * k); e = 1 - 0.42 * q; sy = 1 - 0.2 * q; amp = 1.3 - q; droop = 0.3 * q; }
@@ -1972,13 +2164,13 @@ function drawBoss(b, t) {
       break;
     }
   }
-  const drop = b.state === 'dying' ? 74.8 * (1 - e) * sy : 0;
+  const drop = (b.state === 'dying' || ['falter', 'mercy', 'quiet', 'sleep'].includes(b.state)) ? 74.8 * (1 - e) * sy : 0;
   const aus = b.state === 'dying' && b.t >= 75 ? 1 + Math.min(1, (b.t - 75) / 50) * 0.8 : 1;
   ctx.save(); ctx.globalAlpha = 0.35 * Math.max(0.2, 1 - (GROUND_Y - b.y) / 260); ctx.fillStyle = '#000';
   ctx.beginPath(); ctx.ellipse(b.x, GROUND_Y + 2, 78, 10, 0, 0, 7); ctx.fill(); ctx.restore();
   // аура
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, (rage ? 0.5 : 0.32) * aus);
-  ctx.drawImage(rage ? glowWarm : glowGreen, b.x - 145 * aus, b.y - 97 - 145 * aus, 290 * aus, 290 * aus);
+  ctx.drawImage(rage ? glowWarm : (b.returned >= 2 || b.state === 'quiet' || b.state === 'sleep') ? glowGold : glowGreen, b.x - 145 * aus, b.y - 97 - 145 * aus, 290 * aus, 290 * aus);
   if (b.state === 'dying' && b.t >= 125) { // световой шлейф взлёта
     const hh = Math.min(GROUND_Y - b.y + 40, 460), gq = ctx.createLinearGradient(0, b.y - 60, 0, b.y - 60 + hh);
     gq.addColorStop(0, 'rgba(210,255,150,0.65)'); gq.addColorStop(1, 'rgba(210,255,150,0)');
@@ -2049,6 +2241,23 @@ function drawBoss(b, t) {
     for (let i = 0; i < 3; i++) { const a = t * 0.12 + i * 2.1; ctx.beginPath(); ctx.arc(b.x + Math.cos(a) * 36, b.y - 208 + Math.sin(a) * 8, 4.5, 0, 7); ctx.fill(); }
   }
 }
+function drawMercy(t) {
+  const b = boss; if (!b) return;
+  for (const r of rains) {
+    if (r.st === 'warn') { const a = Math.min(1, r.t / 20) * (0.5 + 0.4 * Math.sin(t * 0.4)); ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#ff7a5a'; ctx.beginPath(); ctx.ellipse(r.x, GROUND_Y + 1, 22, 5, 0, 0, 7); ctx.fill(); ctx.restore(); continue; }
+    ctx.save(); ctx.translate(r.x, r.y); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.6; ctx.drawImage(glowGreen, -26, -26, 52, 52); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    ctx.beginPath(); ctx.moveTo(0, 22); ctx.lineTo(9, -10); ctx.lineTo(0, -22); ctx.lineTo(-9, -10); ctx.closePath(); ctx.fillStyle = '#c8f56a'; ctx.fill(); ctx.strokeStyle = B_OUT; ctx.lineWidth = 2.5; ctx.stroke(); ctx.restore();
+  }
+  for (const s of mshards) {
+    const bob = s.st === 'ground' ? Math.sin(t * 0.08 + s.x) * 3 : 0;
+    ctx.save(); ctx.translate(s.x, s.y + bob); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.6 + 0.2 * Math.sin(t * 0.12); ctx.drawImage(glowGold, -40, -40, 80, 80); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    ctx.beginPath(); ctx.moveTo(0, -16); ctx.lineTo(10, 0); ctx.lineTo(0, 16); ctx.lineTo(-10, 0); ctx.closePath(); ctx.fillStyle = '#ffe9a0'; ctx.fill(); ctx.strokeStyle = '#17100a'; ctx.lineWidth = 2.5; ctx.stroke(); ctx.restore();
+  }
+  for (let i = 0; i < b.returned && b.state !== 'sleep'; i++) { const a = t * 0.03 + i * 1.6; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.9; ctx.drawImage(glowGold, b.x + Math.cos(a) * 46 - 14, b.y - 100 + Math.sin(a) * 30 - 14, 28, 28); ctx.restore(); }
+  if (b.say) { const a = Math.min(1, b.say.t / 30, (200 - b.say.t) / 20 + 0.2); ctx.save(); ctx.globalAlpha = Math.max(0, a); ctx.font = 'italic 17px Georgia, serif'; ctx.textAlign = 'center'; ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 8; ctx.fillStyle = '#e8f8c8'; ctx.fillText(b.say.text, Math.max(cam + 190, Math.min(cam + VW - 190, b.x)), b.y - 222); ctx.restore(); }
+  if (b.state === 'sleep') { for (let i = 0; i < 2; i++) { const k = ((t * 0.25 + i * 20) % 40) / 40; ctx.save(); ctx.globalAlpha = 0.8 * (1 - k); ctx.font = 'italic 700 ' + (14 + i * 5) + 'px Georgia, serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#e8f8c8'; ctx.fillText('z', b.x + 40 + i * 12, b.y - 150 - k * 50); ctx.restore(); } }
+  if (P.carry) { const s = P.carry; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5; ctx.drawImage(glowGold, s.x - 26, s.y - 26, 52, 52); ctx.restore(); }
+}
 function drawBooms() {
   booms.forEach(m => {
     m.trail.forEach((q, i) => { ctx.globalAlpha = 0.07 * (i + 1); drawBlade(q[0], q[1], m.rot - (m.trail.length - i) * 0.5, 0.36, false); });
@@ -2103,7 +2312,12 @@ function drawArenaFloor(t) {
   ctx.restore();
 }
 function drawBossBar() {
-  const b = boss; if (!b || b.state === 'dead') return;
+  const b = boss; if (!b || b.state === 'dead' || b.state === 'sleep') return;
+  if (['falter', 'mercy', 'quiet'].includes(b.state)) {
+    const y = VH - 52; centerText(b.name || 'ХРАНИТЕЛЬ ОСКОЛКОВ', y - 12, '600 20px Georgia, serif', '#f3ead0', 1, '4px');
+    for (let i = 0; i < M_TOTAL; i++) { const x = VW / 2 + (i - (M_TOTAL - 1) / 2) * 44, full = i < b.returned; ctx.save(); ctx.translate(x, y + 8); ctx.beginPath(); ctx.moveTo(0, -13); ctx.lineTo(9, 0); ctx.lineTo(0, 13); ctx.lineTo(-9, 0); ctx.closePath(); ctx.fillStyle = full ? '#ffe9a0' : '#241a30'; ctx.fill(); ctx.strokeStyle = full ? '#fff6d0' : '#6a5a47'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore(); }
+    return;
+  }
   b.disp += (b.hp - b.disp) * 0.12;
   const w = 520, x = (VW - w) / 2, y = VH - 52, frac = Math.max(0, b.disp) / b.max;
   centerText(b.name || 'ХРАНИТЕЛЬ ОСКОЛКОВ', y - 12, '600 20px Georgia, serif', '#f3ead0', 1, '4px');
@@ -2532,6 +2746,7 @@ function draw() {
     if (!p.g) { drawChain(p.x + p.w * 0.25, p.y); drawChain(p.x + p.w * 0.75, p.y); }
     const a = platArt[i]; ctx.drawImage(a.cv, p.x - a.ox, p.y - a.oy);
   });
+  drawGhostPlats(t);
   drawMasses(t);
   drawDoors(t); drawHazards(t); drawMovers(t);
   if (room.id === 'arena') drawArenaFloor(t);
@@ -2540,6 +2755,7 @@ function draw() {
   drawExitGlow(t);
   drawStoryFront(t, cx);
   lanterns.forEach(l => { if (vis(l.x - 30, 60)) drawLantern(l); });
+  drawLanternPrompt(t);
   levers.forEach(lv => drawLever(lv, t));
   items.forEach(it => {
     if (it.got) return;
@@ -2550,12 +2766,12 @@ function draw() {
       ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = tw * (1 - a); ctx.strokeStyle = '#ffe6c0'; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(it.x - 6, it.y); ctx.lineTo(it.x + 6, it.y); ctx.moveTo(it.x, it.y - 6); ctx.lineTo(it.x, it.y + 6); ctx.stroke(); ctx.restore();
       if (a > 0) { it.fade = a; ctx.save(); ctx.globalAlpha = a; drawOrb(it, t); ctx.restore(); }
-    } else drawOrb(it, t);
+    } else if (it.lost) drawLostItem(it, t); else drawOrb(it, t);
   });
   coins.forEach((c, i) => { if (!c.got && vis(c.x - 20, 40)) drawBulb(c, i, t); });
   npcs.forEach(n => { if (vis(n.x - 70, 140)) drawNpc(n, t); });
-  enemies.forEach(e => { if (vis(e.x, e.w)) drawEnemy(e); });
-  drawArenaWall(); if (boss) (boss.kind === 'clock' ? drawClockBoss : drawBoss)(boss, t); drawWaves(); drawBooms(); drawTowerDynamic(t);
+  enemies.forEach(e => { if (vis(e.x, e.w)) { drawEnemy(e); drawCalmMark(e); } });
+  drawArenaWall(); if (boss) (boss.kind === 'clock' ? drawClockBoss : drawBoss)(boss, t); drawWaves(); drawBooms(); drawMercy(t); drawTowerDynamic(t);
   drawOrbs(t);
   drawPlayer(P, t);
   if (P.cast > 0) {
@@ -2635,19 +2851,19 @@ function centerText(txt, y, font, col, alpha, spacing) {
   ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 12; ctx.fillText(txt, VW / 2, y); ctx.restore();
 }
 let hintT = 0;
-const GAME_VER = '0.22 alpha';
+const GAME_VER = '0.23 alpha';
 const VER_BOX = {x: 10, y: 8, w: 150, h: 34}, VER_BOX_MAP = {x: VW - 166, y: VH - 48, w: 150, h: 34};
 const verBox = () => state === 'map' ? VER_BOX_MAP : VER_BOX;
 let aboutOpen = false;
 const CHANGELOG = [
-  'Новое название: Cube Story',
-  'Свой свет у Цепных залов, Колодца, Склепа, Моста, Шпилей',
-  'Свет героя: ярче от лампочек, мигает при малом здоровье',
-  'Враги из блоков; при гибели — искры, шестерёнки, стекло',
-  'Истории в декорациях: лестницы, рисунки, провода с лампами',
-  'Мох вырастает там, где проходил герой; светлячки и лужи',
-  'После побед: теплее цвет, реже туман, огни на баннерах',
-  'Карта теплеет по мере победы; в музыке — колокольчики',
+  'Лампочки — искры: ими зажигают погасшие фонари (E)',
+  'Зажжённый фонарь: чекпоинт, свет, скрытые платформы, сон гумми',
+  'Хранитель: новые приёмы — рывок и дождь осколков, цикл случайный',
+  'Финал Хранителя: верни ему осколки — он не гибнет, а засыпает',
+  'Потерянные вещи: 6 находок в тайных нишах, сумка (клавиша B)',
+  'Мох, Фонарщик и Тик узнают ваши находки',
+  'Часовщик: тихая развязка после боя',
+  'Всё из 0.22: свет, мох, история в декорациях',
 ];
 // ---- сообщения: небольшие, с мягкой полосой и тонкими линиями ----
 function msgBand(y, h, a) {
@@ -2817,8 +3033,57 @@ function drawMap(t) {
   ctx.font = '17px Georgia, serif'; ctx.fillStyle = '#f3ead0';
   ctx.fillText('Комнаты: ' + seenN + ' / ' + ROOM_IDS.length, 520, L1 + 30);
   ctx.fillText('Осколки сердца: ' + (world.shards || 0) + ' / ' + TOTAL_SHARDS, 520, L1 + 56);
-  ctx.fillText('Лампочки: ' + coinsGot, 520, L1 + 82);
+  ctx.fillText('Лампочки: ' + bulbsLeft() + '  (собрано ' + coinsGot + ')', 520, L1 + 82);
+  { let lit = 0, tot = 0; ROOM_IDS.forEach(id => { const n = (ROOMS[id].lanterns || []).length; tot += n; lit += (world.lit[id] || []).filter(Boolean).length; });
+    ctx.fillText('Фонари: ' + lit + ' / ' + tot, 520, L1 + 108);
+    ctx.fillText('Сумка: ' + bagCount() + ' / ' + LOST_ORDER.length, 520, L1 + 134);
+    bagBtn = {x: 690, y: L1 + 114, w: 190, h: 30};
+    ctx.save(); ctx.fillStyle = 'rgba(30,22,48,0.85)'; rrect(bagBtn.x, bagBtn.y, bagBtn.w, bagBtn.h, 8); ctx.fill(); ctx.strokeStyle = '#c9a24a'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.font = '600 15px Georgia, serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffe9b0'; ctx.fillText('Открыть сумку' + (touchMode ? '' : ' (B)'), bagBtn.x + bagBtn.w / 2, bagBtn.y + 20); ctx.restore(); }
   centerText(touchMode ? 'Коснитесь экрана — закрыть' + (mapTabs().length ? ' · вкладки сверху' : '') : 'Tab / N / Esc — закрыть карту' + (mapTabs().length ? '   ·   ← → — область' : ''), VH - 28, 'italic 16px Georgia, serif', '#c8b898', 0.85);
+}
+const BAG_ROW = i => ({x: 60, y: 104 + i * 50, w: 340, h: 44});
+function drawLostIcon(id, x, y, s) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.lineJoin = 'round'; ctx.lineWidth = 2; ctx.strokeStyle = '#17100a';
+  const box = (a, b, w, h, c, r) => { ctx.fillStyle = c; rrect(a, b, w, h, r || 2); ctx.fill(); ctx.stroke(); };
+  const disc = (a, b, r, c) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(a, b, r, 0, 7); ctx.fill(); ctx.stroke(); };
+  if (id === 'tag') { box(-9, -12, 18, 24, '#b9a47a', 3); disc(0, -7, 2.5, '#17100a'); disc(0, 3, 5, '#ffe27a'); ctx.fillStyle = '#17100a'; ctx.fillRect(-1, 8, 2, 3); }
+  else if (id === 'note') { ctx.fillStyle = '#e8dcc0'; ctx.beginPath(); ctx.moveTo(-10, -11); ctx.lineTo(8, -12); ctx.lineTo(11, -2); ctx.lineTo(7, 4); ctx.lineTo(10, 12); ctx.lineTo(-9, 11); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.strokeStyle = '#7a6040'; ctx.lineWidth = 1.4; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(-6, -6 + i * 5); ctx.lineTo(5, -6 + i * 5); ctx.stroke(); } }
+  else if (id === 'toy') { box(-9, -2, 18, 12, '#c9a24a', 3); box(-6, -12, 12, 10, '#d9b85a', 3); ctx.fillStyle = '#17100a'; ctx.fillRect(-3, -8, 2, 3); ctx.fillRect(1, -8, 2, 3); box(9, 1, 7, 3, '#8a8f9c', 1); disc(17, 2, 3.4, '#8a8f9c'); }
+  else if (id === 'box') { box(-12, -3, 24, 13, '#7a5a3a', 2); box(-12, -9, 24, 6, '#946e46', 2); box(-3, 10, 6, 3, '#4a3320', 1); ctx.strokeStyle = '#d9b070'; ctx.beginPath(); ctx.moveTo(12, 3); ctx.lineTo(17, 3); ctx.lineTo(17, -3); ctx.stroke(); }
+  else if (id === 'kettle') { ctx.fillStyle = '#8a8f9c'; ctx.beginPath(); ctx.ellipse(0, 3, 11, 9, 0, 0, 7); ctx.fill(); ctx.stroke(); box(-5, -8, 10, 4, '#6a6f7c', 2); ctx.strokeStyle = '#17100a'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.arc(-10, 1, 7, 1.6, 4.7); ctx.stroke(); ctx.fillStyle = '#8a8f9c'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(10, 2); ctx.lineTo(15, -2); ctx.lineTo(13, 4); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+  else { disc(-6, -11, 3.5, '#c9a24a'); disc(6, -11, 3.5, '#c9a24a'); disc(0, 0, 11, '#c9a24a'); disc(0, 0, 7.5, '#f0e4c4'); ctx.fillStyle = '#4a2810'; ctx.beginPath(); ctx.arc(0, 0, 1.6, 0, 7); ctx.fill(); box(-7, 10, 4, 4, '#6a5a47', 1); box(3, 10, 4, 4, '#6a5a47', 1); }
+  ctx.restore();
+}
+function drawBag(t) {
+  const bg = ctx.createLinearGradient(0, 0, 0, VH); bg.addColorStop(0, '#07040f'); bg.addColorStop(1, '#130b20'); ctx.fillStyle = bg; ctx.fillRect(0, 0, VW, VH);
+  ctx.save(); ctx.globalAlpha = 0.45; for (let k = 0; k < 3; k++) ctx.drawImage(mistSpr, 80 + k * 300 + Math.sin(t * 0.01 + k) * 20, 100 + (k % 2) * 60, 420, 190); ctx.restore();
+  centerText('СУМКА', 54, '600 20px Georgia, serif', '#f3ead0', 1, '10px'); msgRule(66, 110, '#c9a24a', 0.7);
+  const bag = world.bag || {};
+  LOST_ORDER.forEach((k, i) => {
+    const r = BAG_ROW(i), have = !!bag[k], sel = i === bagSel;
+    ctx.fillStyle = sel ? 'rgba(58,46,90,0.9)' : 'rgba(24,16,38,0.85)'; rrect(r.x, r.y, r.w, r.h, 8); ctx.fill();
+    ctx.strokeStyle = sel ? '#ffe9a8' : '#4a3a5a'; ctx.lineWidth = sel ? 2.4 : 1.4; ctx.stroke();
+    if (have) drawLostIcon(k, r.x + 32, r.y + 23, 1.05); else { ctx.font = '600 22px Georgia, serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#4a4058'; ctx.fillText('?', r.x + 32, r.y + 31); }
+    ctx.font = '17px Georgia, serif'; ctx.textAlign = 'left'; ctx.fillStyle = have ? '#f3ead0' : '#6a6070'; ctx.fillText(have ? LOST[k].name : '???', r.x + 66, r.y + 28);
+  });
+  const px = 430, py = 104;
+  ctx.fillStyle = 'rgba(18,12,30,0.9)'; rrect(px, py, 470, 262, 10); ctx.fill(); ctx.strokeStyle = '#8a7658'; ctx.lineWidth = 1.6; ctx.stroke();
+  const k = LOST_ORDER[bagSel];
+  if (bag[k]) {
+    drawLostIcon(k, px + 44, py + 46, 1.7);
+    ctx.font = '600 22px Georgia, serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#ffe9b0'; ctx.fillText(LOST[k].name, px + 86, py + 52);
+    ctx.font = 'italic 17px Georgia, serif'; ctx.fillStyle = '#e8dcc0'; wrapLines(LOST[k].text, 420).forEach((l, i) => ctx.fillText(l, px + 24, py + 100 + i * 26));
+  } else {
+    ctx.font = 'italic 17px Georgia, serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#8a7e98';
+    wrapLines('Здесь пока пусто. Потерянные вещи лежат там, куда достаёт свет зажжённого фонаря — в нишах и на тайных площадках.', 420).forEach((l, i) => ctx.fillText(l, px + 24, py + 60 + i * 26));
+  }
+  const n = bagCount();
+  ctx.font = '600 17px Georgia, serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#c9a24a'; ctx.fillText('Кто ты?  ' + n + ' / ' + LOST_ORDER.length, px + 24, py + 196);
+  ctx.font = 'italic 16px Georgia, serif'; ctx.fillStyle = n >= LOST_ORDER.length ? '#ffe9b0' : '#d8ccb0'; wrapLines(BAG_WHO[n], 420).forEach((l, i) => ctx.fillText(l, px + 24, py + 222 + i * 22));
+  ctx.save(); ctx.fillStyle = 'rgba(30,22,48,0.85)'; rrect(60, VH - 62, 150, 36, 8); ctx.fill(); ctx.strokeStyle = '#c9a24a'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.font = '600 15px Georgia, serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffe9b0'; ctx.fillText('‹ К карте', 135, VH - 39); ctx.restore();
+  centerText(touchMode ? 'Коснитесь вещи — осмотреть' : '↑ ↓ — выбрать   ·   B — к карте   ·   Tab / Esc — закрыть', VH - 28, 'italic 15px Georgia, serif', '#c8b898', 0.85);
 }
 function drawAbilityIcons() {
   let x = VW - 290;
@@ -2875,7 +3140,7 @@ function drawEnergyBar(x, y, w, h) {
 }
 function drawHUD(t) {
   if (state === 'title') { drawTitle(t); return; }
-  if (state === 'map') { drawMap(t); drawVerPill(); if (aboutOpen) drawAbout(); return; }
+  if (state === 'map') { if (bagOpen) drawBag(t); else drawMap(t); drawVerPill(); if (aboutOpen) drawAbout(); return; }
   const hs = touchMode ? 1 : 1.3;   // на компьютере панель крупнее
   ctx.save(); ctx.scale(hs, hs);
   // портрет
@@ -2896,8 +3161,8 @@ function drawHUD(t) {
   ctx.save(); ctx.translate(84, 56); ctx.scale(0.85, 0.85);
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5; ctx.drawImage(glowWarm, -22, -22, 44, 44); ctx.restore();
   bulbBody(); ctx.restore();
-  ctx.font = 'bold 21px Georgia, serif'; ctx.textAlign = 'left'; ctx.lineWidth = 4; ctx.strokeStyle = '#0a0610'; ctx.strokeText(coinsGot, 100, 63);
-  ctx.fillStyle = '#f3ead0'; ctx.fillText(coinsGot, 100, 63);
+  ctx.font = 'bold 21px Georgia, serif'; ctx.textAlign = 'left'; ctx.lineWidth = 4; ctx.strokeStyle = '#0a0610'; ctx.strokeText(bulbsLeft(), 100, 63);
+  ctx.fillStyle = '#f3ead0'; ctx.fillText(bulbsLeft(), 100, 63);
   if (world.ab.orb) drawEnergyBar(150, 47, 112, 18);
   ctx.restore();
   drawAbilityIcons();
@@ -2924,7 +3189,7 @@ function drawHUD(t) {
   }
   if (hintT > 0 && state === 'play') {
     const a = Math.min(1, (700 - hintT) / 40, hintT / 60);
-    centerText(touchMode ? 'Слева — идти     Справа — прыжок и меч     Вверху — карта' : '← → / A D — идти     Пробел — прыжок     X / J — меч     E — говорить     Tab — карта', VH - 28, '14px Georgia, serif', '#e8dcc0', a * 0.8);
+    centerText(touchMode ? 'Слева — идти     Справа — прыжок и меч     Вверху — карта' : '← → / A D — идти     Пробел — прыжок     X / J — меч     E — говорить / зажечь     B — сумка     Tab — карта', VH - 28, '14px Georgia, serif', '#e8dcc0', a * 0.8);
   }
   if (state === 'talk') drawDialogue(t);
   if (state === 'win') {
@@ -3133,9 +3398,10 @@ function hintPages() {
   else if (!w.bossDead) p.push('Решётка поднята. Хранитель ждёт тебя на арене.', 'Он бросает лезвие, как бумеранг. Отбей его мечом — и оно вернётся к хозяину.');
   else p.push('Врата на арене открыты. За ними — Часовая башня, а на её вершине ждёт Часовщик.', 'В башне много прыжков и шестерён. Не забудь заглянуть к Тику в мастерскую — он расскажет, как одолеть хозяина башни.');
   if ((w.shards || 0) < TOTAL_SHARDS) p.push('И ещё: три осколка сердца складываются в целое сердце. Часть осколков прячется: стучи по подозрительной кладке и приглядывайся к пустому воздуху — иногда он едва мерцает.');
+  p.push('Погасшие фонари можно зажечь лампочками — это искры Великой Лампы. Фонарь запомнит тебя, проявит спрятанное и убаюкает гумми поблизости.');
   return p;
 }
-function buildTree(key) {
+function buildTree0(key) {
   const w = world;
   if (key === 'tick') return {
     root: {say: [w.talk.tick ? 'Тик-так! Что-то ещё?' : 'Тик-так! О, гость! Ты вовремя... или нет? Время тут капризное.'], choices: [
@@ -3200,6 +3466,16 @@ function buildTree(key) {
     bye: {say: ['Тогда иди. А я подержу фонарь.'], go: 'end'}
   };
 }
+function buildTree(key) {
+  const t = buildTree0(key), bag = world.bag || {}, n = bagCount();
+  const add = (c, node) => { const ch = t.root.choices; ch.splice(Math.max(0, ch.length - 1), 0, c); t[c.go] = node; };
+  if ((key === 'gate' || key === 'gate2' || key === 'ante') && n > 0) add({t: 'Я нашёл в мире вещи…', go: 'bag'}, {say: n >= LOST_ORDER.length
+    ? ['Бирка. Записка. Игрушка… Это папин почерк.', 'Он спрятал тебя в сумке, чтобы Хранитель не нашёл последнюю искру.', 'Ты не потерялся, искорка. Тебя сберегли.']
+    : ['Хм. Это пахнет домом — старым и тёплым.', 'Ищи ещё. Вещи не теряются просто так — они ждут там, куда достаёт свет фонаря.'], go: 'root'});
+  if ((key === 'hall' || key === 'hall2') && bag.note) add({t: 'Я нашёл твою записку.', go: 'note'}, {say: ['Эту записку я писал дрожащей рукой.', 'Имя дать не мог — Хранитель слушает имена. Дал сумку.', 'Прости, что ты шёл один.'], go: 'root'});
+  if ((key === 'tick' || key === 'tick2') && bag.alarm) add({t: 'Я нашёл ходики без стрелок.', go: 'alarm'}, {say: ['Мои ходики! Они всегда спешили на три минуты.', 'Оставь себе. Пусть напоминают: время — это то, что мы друг другу даём.'], go: 'root'});
+  return t;
+}
 const dlgNode = () => dlg.tree[dlg.node];
 const dlgText = () => dlgNode().say[dlg.page];
 function startTalk(n) {
@@ -3208,7 +3484,11 @@ function startTalk(n) {
   const flag = {gate: 'moss', gate2: 'moss2', ante: 'moss3', hall: 'fonar', hall2: 'fonar2', tick: 'tick', tick2: 'tick2'}[key]; world.talk[flag] = (world.talk[flag] || 0) + 1;
   P.face = n.x > P.x + P.w / 2 ? 1 : -1; P.vx = 0; state = 'talk'; tone(440, 660, 0.14, 'sine', 0.05);
 }
-function tryTalk() { if (state === 'play' && talkTarget && P.onGround) startTalk(talkTarget); }
+function tryTalk() {
+  if (state !== 'play' || !P.onGround) return;
+  if (lanternNear) { lightLantern(lanternNear); return; }
+  if (talkTarget) startTalk(talkTarget);
+}
 function gotoNode(id) {
   if (id === 'end' || !dlg.tree[id]) { endTalk(); return; }
   dlg.node = id; dlg.page = 0; dlg.chars = 0; dlg.sel = 0;
@@ -3593,8 +3873,8 @@ function updateClockMinion(e, p, jd) {
   if (e.flash > 0) e.flash--;
   if (e.dead > 0) { e.y += 1.2; if (--e.dead <= 0) { const i = enemies.indexOf(e); if (i >= 0) enemies.splice(i, 1); } return; }
   const px = p.x + p.w / 2, py = p.y + p.h / 2, ex = e.x + e.w / 2, ey = e.y + e.h / 2, dx = px - ex, dy = py - 10 - ey, d = Math.hypot(dx, dy) || 1;
-  e.ph += 0.12;
-  if (e.flash === 0) e.chase = d < 300 ? true : (d > 460 ? false : e.chase);
+  e.ph += 0.12; e.calm = !e.trial && calmAt(ex);
+  if (e.flash === 0) e.chase = e.calm ? false : d < 300 ? true : (d > 460 ? false : e.chase);
   if (e.chase) { e.x += dx / d * 1.55 + Math.sin(e.ph * 2) * 0.35; e.y += dy / d * 1.25 + Math.cos(e.ph * 1.7) * 0.35; }
   else {
     const hd = Math.hypot(e.hx - ex, e.hy - ey);
@@ -3604,7 +3884,7 @@ function updateClockMinion(e, p, jd) {
   e.x += e.kb; e.kb *= 0.85; if (Math.abs(e.kb) < 0.1) e.kb = 0;
   e.x = Math.max(0, Math.min(room.w - e.w, e.x)); e.y = Math.min(e.y, GROUND_Y - e.h - 4);
   e.f = dx < 0 ? -1 : 1;
-  if (hitR(p, e)) {
+  if (!e.calm && hitR(p, e)) {
     if (p.vy > 0 && p.y + p.h - p.vy <= e.y + 14) { killClock(e); p.vy = jd ? -11.5 : -8.5; sfx.stomp(); p.djUsed = false; }
     else hurt(e.x + e.w / 2, false);
   }
@@ -3836,7 +4116,7 @@ function updateClockBoss() {
     case 'mech': b.spin = 1; if (b.t === 30) activateMechanism(); if (b.t > 100) { b.state = 'idle'; b.t = 0; } break;
     case 'dying':
       if (b.t % 3 === 0) puff(b.x + (Math.random() - 0.5) * 130, b.y - Math.random() * 210, 5, Math.random() < 0.5 ? 'rgba(255,200,110,1)' : 'rgba(190,130,255,1)', 3, true);
-      if (b.t > 110) { b.state = 'dead'; bossDead = true; unlockArena(); coinsGot += 30; sfx.lantern(); sfx.coin(); puff(b.x, b.y - 120, 50, 'rgba(255,210,110,1)', 5, true); shake = 14; movers = []; rebuildSolids(); }
+      if (b.t > 110) { b.state = 'dead'; bossDead = true; unlockArena(); coinsGot += 30; showPopup('ЧАСОВЩИК', 'Стрелки встали ровно. Он наконец отдыхает.', '#ffd38a'); sfx.lantern(); sfx.coin(); puff(b.x, b.y - 120, 50, 'rgba(255,210,110,1)', 5, true); shake = 14; movers = []; rebuildSolids(); }
       break;
   }
   for (let i = shots.length - 1; i >= 0; i--) {
