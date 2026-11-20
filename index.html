@@ -467,7 +467,7 @@ const ROOMS = {
     barriers: [{kind: 'crack', id: 'cr1', x: 1740, y: 330, w: 30, h: 70, hp: 3}],
     items: [{type: 'shard', id: 's1', x: 1865, y: 366}],
     bulbs: [[600, 270], [650, 270], [700, 270], [820, 372], [900, 330], [960, 300], [1100, 372], [1200, 372], [1260, 372], [1330, 372], [1460, 372], [1560, 372], [1660, 372]],
-    mobs: [], lanterns: [380], banners: [700, 1500],
+    mobs: [{kind: 'cr', type: 'guard', x: 700, min: 600, max: 860}, {kind: 'cr', type: 'guard', x: 1150, min: 1060, max: 1450}, {kind: 'cr', type: 'warden', x: 1560, min: 1500, max: 1700}], lanterns: [380], banners: [700, 1500],
     npcs: [{id: 'moss', name: 'МОХ', top: 52, x: 1280, y: 300, scene: 'gate'}],
     exits: [EX(1984, 100, 16, 200, 'chains', 70, 400, 1)]
   },
@@ -476,7 +476,7 @@ const ROOMS = {
     name: 'Цепные залы', w: 2800, y0: 0, theme: 'ruins', music: 'calm', map: [4, 3, 6, 1],
     plats: [G(0, 500), G(650, 400), G(1530, 570), G(2250, 550), F(1090, 345, 100), F(1240, 300, 100), F(1390, 345, 100), F(700, 290, 140), F(1700, 300, 150), F(2300, 300, 160)],
     bulbs: [[300, 372], [420, 372], [770, 255], [830, 255], [760, 372], [900, 372], [1000, 372], [1140, 310], [1290, 265], [1440, 310], [1600, 372], [1770, 265], [1850, 372], [2000, 372], [2340, 265], [2400, 372], [2560, 372], [2700, 372]],
-    mobs: [{x: 720, min: 660, max: 1040}, {x: 1600, min: 1540, max: 1800}, {x: 1850, min: 1800, max: 2090}, {x: 2400, min: 2260, max: 2780}],
+    mobs: [{x: 720, min: 660, max: 1040}, {kind: 'cr', type: 'knight', x: 1600, min: 1540, max: 1800}, {kind: 'cr', type: 'guard', weak: true, x: 1850, min: 1800, max: 2090}, {kind: 'cr', type: 'knight', x: 2400, min: 2260, max: 2780}],
     lanterns: [], banners: [400, 1800],
     exits: [EX(0, 200, 14, 200, 'gate', 1900, 400, -1), EX(2786, 200, 14, 200, 'shaft', 70, 400, 1)]
   },
@@ -498,7 +498,7 @@ const ROOMS = {
     plats: [G(0, 760), G(900, 1000), F(300, 300, 150), F(1100, 300, 150), F(1350, 255, 140), F(1550, 300, 130)],
     items: [{type: 'dash', id: 'dash', x: 1800, y: 336}],
     bulbs: [[200, 372], [500, 372], [340, 265], [1000, 372], [1140, 265], [1200, 372], [1390, 220], [1500, 372], [1590, 265], [1650, 372]],
-    mobs: [{x: 420, min: 260, max: 740, hp: 3}, {x: 1000, min: 910, max: 1250, hp: 3}, {x: 1450, min: 1260, max: 1700, hp: 3}],
+    mobs: [{x: 420, min: 260, max: 740, hp: 3, skin: 'pink'}, {x: 1000, min: 910, max: 1250, hp: 3, skin: 'pink'}, {x: 1450, min: 1260, max: 1700, hp: 3, skin: 'pink'}],
     lanterns: [], banners: [500, 1300],
     exits: [EX(0, 200, 14, 200, 'shaft', 1220, 400, -1)]
   },
@@ -518,7 +518,7 @@ const ROOMS = {
     plats: [G(0, 2400)],
     items: [{type: 'dj', id: 'dj', x: 1700, y: 330}],
     bulbs: [[300, 372], [600, 372], [900, 372], [1200, 372], [1500, 372], [1900, 372], [2200, 372]],
-    mobs: [], lanterns: [2050], banners: [],
+    mobs: [{kind: 'cr', type: 'moss', mode: 'still', x: 420}, {kind: 'cr', type: 'moss', mode: 'hop', x: 1010, min: 900, max: 1250}, {kind: 'cr', type: 'moss', mode: 'fly', x: 1600, y: 250}, {kind: 'cr', type: 'moss', mode: 'hop', x: 2180, min: 2100, max: 2380}], lanterns: [2050], banners: [],
     npcs: [{id: 'fonar', kind: 'robot', name: 'ФОНАРЩИК', top: 134, x: 2250, y: 400, scene: 'hall'}],
     exits: [EX(0, 200, 14, 200, 'bridge', 3300, 400, -1)]
   },
@@ -532,7 +532,7 @@ const ROOMS = {
     levers: [{id: 'lv1', x: 1800, y: 140}],
     items: [{type: 'shard', id: 's3', x: 2850, y: 366}],
     bulbs: [[200, 372], [400, 372], [740, 310], [1040, 265], [960, 372], [1100, 372], [1220, 372], [1500, 372], [1600, 255], [1780, 105], [1860, 105], [1900, 372], [2150, 372], [2290, 265], [2400, 372], [2560, 372]],
-    mobs: [{x: 1000, min: 890, max: 1290, hp: 3}, {x: 1550, min: 1460, max: 1700, hp: 3}, {x: 1750, min: 1700, max: 1890, hp: 3}, {x: 2250, min: 2080, max: 2600, hp: 3}],
+    mobs: [{x: 1000, min: 890, max: 1290, hp: 3}, {kind: 'cr', type: 'tick', x: 1550, min: 1460, max: 1700}, {kind: 'cr', type: 'flyer', x: 1800, y: 230}, {kind: 'cr', type: 'tick', x: 2250, min: 2080, max: 2600}, {kind: 'cr', type: 'flyer', x: 950, y: 240}],
     lanterns: [], banners: [300, 1000, 2200],
     exits: [EX(0, 200, 14, 200, 'shaft', 1200, -770, -1), EX(2986, 100, 14, 200, 'ante', 70, 400, 1)]
   },
@@ -610,7 +610,7 @@ Object.assign(ROOMS, {
             F(640, -420, 170), F(950, -560, 150), F(620, -720, 140), F(300, -870, 140), F(620, -1010, 140), F(900, -1100, 200)],
     hazards: [{x: 565, y: 95, w: 50}, {x: 690, y: -420, w: 60}, {x: 345, y: -870, w: 50}],
     bulbs: [[250, 372], [595, 265], [320, 160], [600, 60], [875, -45], [610, -210], [320, -375], [725, -455], [1025, -595], [690, -755], [370, -905], [690, -1045], [1000, -1135]],
-    mobs: [{kind: 'clock', x: 650, y: 60, min: 450, max: 900}, {kind: 'clock', x: 500, y: -300, min: 250, max: 800}, {kind: 'clock', x: 700, y: -650, min: 450, max: 1000}, {kind: 'clock', x: 450, y: -960, min: 300, max: 800}],
+    mobs: [{kind: 'clock', x: 650, y: 60, min: 450, max: 900}, {kind: 'clock', x: 500, y: -300, min: 250, max: 800}, {kind: 'clock', x: 700, y: -650, min: 450, max: 1000}, {kind: 'clock', x: 450, y: -960, min: 300, max: 800, elite: true}],
     lanterns: [], banners: [],
     lamps: [[200, 100], [900, -120], [200, -480], [900, -840]],
     exits: [EX(0, 200, 14, 200, 'tw_arena', 1400, 400, -1), EX(1086, -1200, 14, 100, 'tw_boss', 70, 400, 1)]
@@ -1219,7 +1219,7 @@ function swordHit() {
   for (const lv of levers) if (!lv.on && lv.swing !== p.swing && hitR(box, {x: lv.x - 22, y: lv.y - 64, w: 44, h: 64})) { lv.swing = p.swing; pullLever(lv); }
   for (let i = enemies.length - 1; i >= 0; i--) {
     const e = enemies[i];
-    if (e.dead > 0 || e.calm || e.swing === p.swing || !hitR(box, e)) continue;
+    if (e.dead > 0 || e.calm || e.friendly || e.swing === p.swing || !hitR(box, e)) continue;
     e.swing = p.swing; e.hp--; e.flash = 8; e.kb = p.face * 7; freeze = 4; shake = Math.max(shake, 5); sfx.clang();
     puff(e.x + e.w / 2, e.y + 16, 10, 'rgba(255,240,200,1)', 3, true);
     if (e.hp <= 0) {
@@ -1245,7 +1245,7 @@ function updateOrbs() {
       damageBoss(ORB_DMG); dead = true;
     }
     if (!dead) for (const e of enemies) {
-      if (e.dead > 0 || e.calm) continue;
+      if (e.dead > 0 || e.calm || e.friendly) continue;
       if (hitR(box, e)) {
         e.hp -= ORB_DMG; e.flash = 8; e.kb = (o.vx > 0 ? 1 : -1) * 7; freeze = 4; shake = Math.max(shake, 5); sfx.orbHit();
         if (e.hp <= 0) { killGummy(e); coinsGot += 2; sfx.coin(); }
@@ -1395,6 +1395,7 @@ function update() {
   for (let i = enemies.length - 1; i >= 0; i--) {
     const e = enemies[i];
     if (e.kind === 'clock') { updateClockMinion(e, p, jd); if (state !== 'play') return; continue; }
+    if (e.kind === 'cr') { updateCr(e, p, jd); if (state !== 'play') return; continue; }
     if (e.flash > 0) e.flash--;
     if (e.dead > 0) { e.x += e.kb; e.kb *= 0.85; if (--e.dead <= 0) enemies.splice(i, 1); continue; }
     // гумми догоняет игрока, если тот рядом и на одной высоте, иначе патрулирует
@@ -1622,6 +1623,8 @@ function gummyEye(x, y, rx, ry, mode, flip) {
 }
 function drawEnemy(e) {
   if (e.kind === 'clock') { drawClockMinion(e); return; }
+  if (e.kind === 'cr') { drawCr(e); return; }
+  if (e.skin === 'pink') { drawPinkGummy(e); return; }
   const fl = e.flash > 0, dead = e.dead > 0, tt = tick, f = e.f || 1, S = 0.74;
   const u = dead ? 1 - e.dead / 36 : 0, sit = dead ? Math.min(1, u * 2.5) : 0, alpha = dead ? Math.min(1, e.dead / 12) : 1;
   const chase = e.chase && !dead, atk = chase && e.atk > 0, s1 = Math.sin(e.ph), bob = dead ? 0 : Math.abs(s1) * -2;
@@ -2845,19 +2848,19 @@ function centerText(txt, y, font, col, alpha, spacing) {
   ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 12; ctx.fillText(txt, VW / 2, y); ctx.restore();
 }
 let hintT = 0;
-const GAME_VER = '0.24 alpha';
+const GAME_VER = '0.25 alpha';
 const VER_BOX = {x: 10, y: 8, w: 150, h: 34}, VER_BOX_MAP = {x: VW - 166, y: VH - 48, w: 150, h: 34};
 const verBox = () => state === 'map' ? VER_BOX_MAP : VER_BOX;
 let aboutOpen = false;
 const CHANGELOG = [
-  'Гирлянды крепятся к верхнему краю экрана',
-  'Лампочек на уровнях вдвое меньше; фонарь стоит 3',
-  'Фоновые шпили и башни стоят на основании, без щелей',
-  'Убраны детские рисунки',
-  'Лестницы ровные и стали частью фона',
-  'Из 0.23: фонари за лампочки, скрытые платформы, сумка',
-  'Из 0.23: Хранитель — рывок, дождь, финал с осколками',
-  'Из 0.22: свет героя, мох, история в декорациях',
+  'Треугольные стражи: Врата Эмберфолла и Цепные залы',
+  'Страж Времени — хранитель прохода у Врат',
+  'Серый шипастый рыцарь в Цепных залах',
+  'Розовые гумми с трещинами и свечением — в Склепе',
+  'Мох в Зале Лампочек: стоит, прыгает, парит',
+  'Жёлтый Тик и синий Летун — Верхние шпили',
+  'Часы-пауки с тонкими лапами; в башне есть элитный',
+  'Из 0.24: гирлянды, лестницы, меньше лампочек',
 ];
 // ---- сообщения: небольшие, с мягкой полосой и тонкими линиями ----
 function msgBand(y, h, a) {
@@ -3780,10 +3783,122 @@ let shots = [], rolls = [], hazGears = [], movers = [], hazards = [], trialOn = 
 const TOWER_STEP = 60 / 84 / 2;
 const BRASS = '#c8963e', BRASS_D = '#7a5324', BRASS_L = 'rgba(255,226,150,0.55)', METAL = '#413757', METAL_D = '#2c2442', CREAM = '#f0dca8';
 
-function makeMob(d) { return d.kind === 'clock' ? makeClock(d) : makeGummy(d); }
+function makeMob(d) { return d.kind === 'clock' ? makeClock(d) : d.kind === 'cr' ? makeCr(d) : makeGummy(d); }
 function makeClock(d) {
   return {kind: 'clock', x: d.x - 15, y: d.y - 17, hx: d.x, hy: d.y, w: 30, h: 34, min: d.min !== undefined ? d.min : d.x - 200, max: d.max !== undefined ? d.max : d.x + 200,
-          hp: 1, ph: Math.random() * 6, pdir: 1, f: 1, flash: 0, kb: 0, swing: 0, dead: 0, chase: false, atk: 0, vx: 0, summoned: !!d.summoned};
+          hp: d.elite ? 3 : 1, elite: !!d.elite, ph: Math.random() * 6, pdir: 1, f: 1, flash: 0, kb: 0, swing: 0, dead: 0, chase: false, atk: 0, vx: 0, summoned: !!d.summoned};
+}
+// ====================== Новые существа (v25) ======================
+const CR = {guard: {w: 28, h: 52, hp: 2, sp: 0.8, ch: 1.4}, knight: {w: 42, h: 62, hp: 4, sp: 0.55, ch: 1.05}, warden: {w: 46, h: 84, hp: 6, sp: 0.5, ch: 0.9},
+            tick: {w: 26, h: 32, hp: 1, sp: 1.6, ch: 2.9}, flyer: {w: 34, h: 26, hp: 1, sp: 1.2, ch: 1.9}, moss: {w: 30, h: 28, hp: 1, sp: 0, ch: 0}};
+function makeCr(d) {
+  const c = CR[d.type], air = d.type === 'flyer' || (d.type === 'moss' && d.mode === 'fly'), y = air ? d.y : (d.y !== undefined ? d.y : GROUND_Y) - c.h;
+  return {...d, kind: 'cr', c, air, x: d.x, y, gy: y, w: c.w, h: c.h, hx: d.x + c.w / 2, hy: y, min: d.min !== undefined ? d.min : d.x - 150, max: d.max !== undefined ? d.max : d.x + 150,
+          hp: d.weak ? 1 : (d.hp || c.hp), ph: Math.random() * 6, f: 1, dir: 1, vx: 0, vy: 0, t: 0, trip: 0, flash: 0, kb: 0, swing: 0, dead: 0, atk: 0, chase: false, friendly: d.type === 'moss'};
+}
+function updateCr(e, p, jd) {
+  const c = e.c; if (e.flash > 0) e.flash--;
+  if (e.dead > 0) { e.x += e.kb; e.kb *= 0.85; if (e.air) e.y += 2; if (--e.dead <= 0) { const i = enemies.indexOf(e); if (i >= 0) enemies.splice(i, 1); } return; }
+  const ex = e.x + e.w / 2, ey = e.y + e.h / 2, px = p.x + p.w / 2, dx = px - ex, dy = p.y + p.h / 2 - 10 - ey, d = Math.hypot(dx, dy) || 1; e.ph += 0.12; e.t++;
+  if (e.type === 'moss') {   // добрый обитатель: не трогает героя
+    if (Math.abs(dx) < 120) e.f = dx < 0 ? -1 : 1;
+    if (e.mode === 'hop') { if (e.t % 100 === 0) e.vy = -5; e.vy += 0.3; e.y = Math.min(e.gy, e.y + e.vy); if (e.y >= e.gy) e.vy = 0; e.x = Math.max(e.min, Math.min(e.max - e.w, e.x + Math.sin(e.t * 0.012) * 0.35)); }
+    if (e.mode === 'fly') { e.y = e.hy + Math.sin(e.ph) * 14; e.x = e.hx - e.w / 2 + Math.cos(e.ph * 0.5) * 40; }
+    return;
+  }
+  e.calm = calmAt(ex);
+  if (e.type === 'flyer') {
+    e.chase = !e.calm && e.flash === 0 && (d < 280 ? true : (d > 420 ? false : e.chase));
+    if (e.chase) { e.x += dx / d * c.ch + Math.sin(e.ph * 2) * 0.5; e.y += dy / d * c.ch * 0.8 + Math.cos(e.ph * 1.7) * 0.4; }
+    else { const hd = Math.hypot(e.hx - ex, e.hy - ey); if (hd > 40) { e.x += (e.hx - ex) / hd * c.sp; e.y += (e.hy - ey) / hd * c.sp; } else { e.x += Math.cos(e.ph * 0.6) * 0.9; e.y += Math.sin(e.ph) * 0.6; } }
+    e.y = Math.min(e.y, GROUND_Y - e.h - 4); e.f = dx < 0 ? -1 : 1;
+  } else {
+    e.chase = !e.calm && e.flash === 0 && Math.abs(dx) < (e.type === 'tick' ? 260 : 210) && p.y + p.h > e.y - 30 && p.y < e.y + e.h + 20 && px > e.min - 30 && px < e.max + 30;
+    if (e.type === 'warden') { if (e.atk > 0) e.atk = ++e.atk > 84 ? 0 : e.atk; else if (e.chase && Math.abs(dx) < 140) e.atk = 1; }   // замах 1–38, выпад 38–54, пауза до 84
+    let v = e.atk > 0 ? 0 : e.chase ? c.ch : c.sp; if (e.calm) v *= 0.5;
+    if (e.type === 'tick') { if (e.trip > 0) { e.trip--; v = 0; } else if (e.chase && e.t % 140 === 0 && Math.random() < 0.6) e.trip = 28; }   // неуклюжий: спотыкается
+    if (e.chase) e.f = dx < 0 ? -1 : 1; else e.f = e.dir;
+    e.x += (e.chase ? e.f : e.dir) * v;
+    if (!e.chase && ((e.x <= e.min && e.dir < 0) || (e.x + e.w >= e.max && e.dir > 0))) e.dir *= -1;
+  }
+  e.x = Math.max(e.min - (e.air ? 400 : 0), Math.min(e.air ? room.w : e.max - e.w, e.x + e.kb)); e.kb *= 0.85; if (Math.abs(e.kb) < 0.1) e.kb = 0;
+  const sp = e.type === 'warden' && e.atk > 38 && e.atk < 54 ? {x: e.f > 0 ? e.x + e.w : e.x - 118, y: e.y + 26, w: 118, h: 14} : null;
+  if (e.calm) return;
+  if (hitR(p, e)) {
+    if (p.vy > 0 && p.y + p.h - p.vy <= e.y + 14) {
+      sfx.stomp(); p.vy = jd ? -11.5 : -8.5; p.djUsed = false;
+      if (--e.hp <= 0) { killGummy(e); coinsGot += 2; } else { e.flash = 8; e.kb = p.face * 6; }
+    } else { const h0 = hp; hurt(e.x + e.w / 2, false); if (room.flip && hp < h0) flipWorld(); }
+  } else if (sp && hitR(p, sp)) hurt(e.x + e.w / 2, false);
+}
+function halo(x, y, r, col) { const g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, col); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2); ctx.restore(); }
+function crb(x, y, w, h, col, fl, r) { rrect(x, y, w, h, r === undefined ? 3 : r); ctx.fillStyle = fl ? '#fff' : col; ctx.fill(); ctx.stroke(); }
+function tri(pts, col, fl) { ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.fillStyle = fl ? '#fff' : col; ctx.fill(); ctx.stroke(); }
+function drawCr(e) {
+  const fl = e.flash > 0, dead = e.dead > 0, t = tick, k = dead ? e.dead / 36 : 1, T = e.type, w = Math.sin(e.ph * 1.6) * (e.chase ? 3 : 2), moving = !dead && (e.chase || e.type !== 'moss');
+  ctx.save(); ctx.globalAlpha = Math.min(1, k * 2);
+  if (!e.air) { ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(e.x + e.w / 2, e.y + e.h + 1, e.w * 0.6, 4, 0, 0, 7); ctx.fill(); }
+  ctx.translate(e.x + e.w / 2, e.air ? e.y + e.h / 2 : e.y + e.h); ctx.scale(e.f, 1); if (dead) ctx.rotate(-0.4 * (1 - k));
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.4;
+  if (T === 'guard' || T === 'warden') {
+    const W = T === 'warden', s = W ? 1.5 : 1, ch = e.chase && !dead, at = e.atk;
+    ctx.save(); ctx.scale(s, s);
+    if (W) tri([[-6, -34], [-22, -6], [-2, -4]], fl ? '#fff' : '#8a3a2a', fl);   // плащ
+    const leg = moving ? w : 0; crb(-9, -9 - leg * 0.4, 7, 9, '#7a6a58', fl, 2); crb(2, -9 + leg * 0.4, 7, 9, '#7a6a58', fl, 2);
+    crb(-9, -30, 18, 22, W ? '#bfae8a' : '#cdbfa5', fl);   // торс
+    if (W) { ctx.beginPath(); ctx.arc(0, -19, 6.5, 0, 7); ctx.fillStyle = fl ? '#fff' : CREAM; ctx.fill(); ctx.stroke(); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(0, -19); ctx.lineTo(Math.cos(t * 0.09) * 4.5, -19 + Math.sin(t * 0.09) * 4.5); ctx.moveTo(0, -19); ctx.lineTo(0, -23); ctx.stroke(); ctx.lineWidth = 2.4; }
+    crb(-13, -29 + (ch ? 0 : w * 0.3), 5, 13, '#a99a80', fl, 2);
+    tri([[-9, -30], [9, -30], [1.5, -52 - (W ? 6 : 0)]], W ? '#e2d6bc' : '#ded2b8', fl);   // вытянутая треугольная голова
+    ctx.strokeStyle = 'rgba(60,40,30,0.7)'; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(-3, -37); ctx.lineTo(0, -41); ctx.lineTo(-2, -45); ctx.stroke(); ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.4;   // скол
+    ctx.fillStyle = BRASS; [-5, 0, 5].forEach(x => { ctx.beginPath(); ctx.arc(x, -32, 1.2, 0, 7); ctx.fill(); });   // заклёпки
+    ctx.fillStyle = ch ? '#ff7a2a' : '#ffb347'; ctx.fillRect(-2.5, -41, 5, 5); halo(0, -38.5, 16, 'rgba(255,170,70,0.55)');   // один светящийся глаз
+    if (W) {   // копьё: замах назад, выпад вперёд
+      const ex = at > 38 && at < 54 ? 58 : at > 0 && at <= 38 ? 6 - at * 0.15 : 18; ctx.strokeStyle = '#5a4630'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(ex - 40, -28); ctx.lineTo(ex + 32, -28); ctx.stroke();
+      ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.4; tri([[ex + 30, -34], [ex + 52, -28], [ex + 30, -22]], '#cfd2dc', fl);
+    }
+    ctx.restore();
+  } else if (T === 'knight') {
+    const leg = moving ? w : 0, a = '#8d8a9c', b = '#6c6a7c';
+    crb(-13, -12 - leg * 0.4, 10, 12, b, fl, 2); crb(3, -12 + leg * 0.4, 10, 12, b, fl, 2);
+    crb(-15, -38, 30, 28, a, fl); ctx.strokeStyle = 'rgba(30,28,44,0.6)'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(-15, -24); ctx.lineTo(15, -24); ctx.moveTo(0, -38); ctx.lineTo(0, -24); ctx.stroke(); ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.4;   // пластины
+    tri([[-26, -34], [-12, -42], [-12, -30]], '#a9a6b8', fl); tri([[26, -34], [12, -42], [12, -30]], '#a9a6b8', fl);   // шипы на плечах
+    crb(-11, -60, 22, 22, '#9b98ad', fl); tri([[-5, -60], [5, -60], [0, -74]], '#c4c1d3', fl);   // шлем с шипом
+    ctx.fillStyle = '#ff4a3a'; ctx.fillRect(-7, -52, 14, 3.5); halo(0, -50, 18, 'rgba(255,70,50,0.4)');
+    crb(14, -34, 6, 16, b, fl, 2);
+  } else if (T === 'tick') {
+    const lean = e.trip > 0 ? 0.4 * Math.sin(e.trip * 0.5) : 0, leg = moving && e.trip <= 0 ? w * 1.6 : 0; ctx.rotate(lean);
+    crb(-8, -9 - leg * 0.5, 6, 9, '#7a5a38', fl, 2); crb(2, -9 + leg * 0.5, 6, 9, '#7a5a38', fl, 2); crb(-8, -19, 16, 11, '#a8743c', fl);
+    crb(-11, -33, 22, 18, '#f3c94a', fl, 4); ctx.fillStyle = '#3a2810'; ctx.fillRect(-5, -27, 3, 4); ctx.fillRect(3, -27, 3, 4);
+    ctx.strokeStyle = 'rgba(255,240,170,0.7)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-8, -31); ctx.lineTo(-3, -31); ctx.stroke();
+  } else if (T === 'flyer') {
+    const fl2 = Math.sin(e.ph * 2.2) * 0.45; halo(0, 0, 26, 'rgba(120,190,255,0.45)');
+    ctx.save(); ctx.rotate(-0.5 + fl2); tri([[-3, -2], [-30, -14], [-14, 4]], '#4a7ccc', fl); ctx.restore();   // две асимметричные крылатые пластины
+    ctx.save(); ctx.rotate(0.35 - fl2 * 0.7); tri([[3, -2], [20, -8], [11, 4]], '#3a64b0', fl); ctx.restore();
+    tri([[0, -12], [9, 0], [0, 12], [-9, 0]], '#5a92e0', fl); ctx.fillStyle = '#d6f2ff'; ctx.beginPath(); ctx.arc(0, 0, 3.6, 0, 7); ctx.fill(); halo(0, 0, 14, 'rgba(210,245,255,0.8)');   // светящийся центр
+  } else if (T === 'moss') {
+    const sq = e.mode === 'hop' && e.y < e.gy - 1 ? 1.15 : 1 + Math.sin(e.ph) * 0.05, fly = e.mode === 'fly'; ctx.translate(0, fly ? 0 : -2); ctx.scale(1 / sq, sq);
+    if (fly) { halo(0, -6, 26, 'rgba(255,230,140,0.35)'); ctx.save(); ctx.rotate(Math.sin(e.ph * 3) * 0.5); tri([[-8, -14], [-22, -22], [-14, -8]], '#a4d25a', fl); tri([[8, -14], [22, -22], [14, -8]], '#a4d25a', fl); ctx.restore(); }
+    crb(-8, -3, 6, 5, '#6a8a2c', fl, 2); crb(2, -3, 6, 5, '#6a8a2c', fl, 2);
+    ctx.beginPath(); ctx.arc(0, -13, 13, 0, 7); ctx.fillStyle = fl ? '#fff' : '#79a63a'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#9ccb52'; [[-7, -22], [5, -24], [10, -17]].forEach(([x, y]) => { ctx.beginPath(); ctx.ellipse(x, y, 4, 2.4, -0.6, 0, 7); ctx.fill(); });   // листочки
+    ctx.beginPath(); ctx.moveTo(0, -26); ctx.lineTo(-2, -32); ctx.moveTo(0, -26); ctx.lineTo(3, -31); ctx.stroke();
+    ctx.fillStyle = '#23330f'; ctx.beginPath(); ctx.arc(-4, -13, 1.9, 0, 7); ctx.arc(4, -13, 1.9, 0, 7); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawPinkGummy(e) {   // гумми Склепа: квадратная розовая голова, трещины, внутреннее свечение
+  const fl = e.flash > 0, dead = e.dead > 0, k = dead ? e.dead / 36 : 1, chase = e.chase && !dead, w = Math.sin(e.ph) * (chase ? 4 : 2.5), f = e.f || 1;
+  ctx.save(); ctx.globalAlpha = Math.min(1, k * 2); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(e.x + e.w / 2, e.y + e.h + 1, 20, 4, 0, 0, 7); ctx.fill();
+  ctx.translate(e.x + e.w / 2, e.y + e.h); ctx.scale(f, 1); if (dead) ctx.rotate(-0.5 * (1 - k)); else if (chase) ctx.rotate(0.08);
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.4;
+  crb(-11, -10 - w * 0.4, 8, 10, '#6e6676', fl, 2); crb(3, -10 + w * 0.4, 8, 10, '#6e6676', fl, 2);
+  crb(-10, -28, 20, 19, '#8c8496', fl); crb(-16, -27 - w * 0.3, 6, 13, '#7c748a', fl, 2); crb(10, -27 + w * 0.3, 6, 13, '#7c748a', fl, 2);
+  const g = 0.55 + 0.25 * Math.sin(tick * 0.07 + e.x); halo(0, -42, 30, 'rgba(255,110,190,' + g * 0.55 + ')');
+  crb(-14, -56, 28, 28, '#f07ab4', fl, 4);   // квадратная розовая голова
+  ctx.fillStyle = 'rgba(255,200,230,' + (0.35 + g * 0.4) + ')'; ctx.fillRect(-9, -51, 18, 18);   // внутреннее свечение
+  ctx.strokeStyle = 'rgba(90,20,60,0.75)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-14, -48); ctx.lineTo(-7, -44); ctx.lineTo(-9, -37); ctx.moveTo(14, -34); ctx.lineTo(8, -38); ctx.lineTo(10, -46); ctx.stroke();   // трещины
+  ctx.fillStyle = chase ? '#ff2a4a' : '#7a1030'; ctx.fillRect(-3, -46, 7, 7);
+  ctx.restore();
 }
 function makeGearDecor(rm) {
   if (rm.theme !== 'tower') return [];
@@ -3885,12 +4000,13 @@ function updateClockMinion(e, p, jd) {
 }
 function drawClockMinion(e) {
   const t = tick, cx = e.x + e.w / 2, cy = e.y + e.h / 2, k = e.dead > 0 ? e.dead / 24 : 1, fl = e.flash > 0, sw = Math.sin(e.ph * 2);
-  ctx.save(); ctx.translate(cx, cy); ctx.scale(k, k); ctx.globalAlpha = Math.min(1, k * 1.6);
+  ctx.save(); ctx.translate(cx, cy); ctx.scale(k * (e.elite ? 1.35 : 1), k * (e.elite ? 1.35 : 1)); ctx.globalAlpha = Math.min(1, k * 1.6);
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= 0.35 + 0.1 * Math.sin(t * 0.1); ctx.drawImage(glowWarm, -34, -34, 68, 68); ctx.restore();
   ctx.lineJoin = 'round'; ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.4;
   ctx.fillStyle = fl ? '#fff' : BRASS_D;
-  [-7, 7].forEach((x, i) => { rrect(x - 3.5, 11 + (i ? sw : -sw) * 1.6, 7, 9, 2); ctx.fill(); ctx.stroke(); });                    // ножки
-  [-1, 1].forEach(s => { rrect(s * 17 - 4, -3 + sw * s * 2.2, 8, 12, 3); ctx.fill(); ctx.stroke(); });                             // ручки
+  ctx.strokeStyle = fl ? '#fff' : BRASS_D; ctx.lineWidth = 2.2; ctx.lineCap = 'round';                                                    // тонкие механические лапы
+  for (const s of [-1, 1]) for (let i = 0; i < 4; i++) { const w = Math.sin(e.ph * 2 + i * 1.6 + (s > 0 ? 1.5 : 0)) * 3, y0 = (i - 1.5) * 4; ctx.beginPath(); ctx.moveTo(s * 8, y0); ctx.lineTo(s * (20 + Math.abs(i - 1.5) * 3), y0 * 1.7 - 9 + w); ctx.lineTo(s * (25 + i * 1.5), 12 + (i - 1.5) * 3 + w * 0.6); ctx.stroke(); }
+  ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.4;
   ctx.beginPath(); ctx.arc(0, -17, 4.2, 0, 7); ctx.fillStyle = fl ? '#fff' : BRASS; ctx.fill(); ctx.stroke();                         // кольцо-макушка
   ctx.beginPath(); ctx.arc(0, 0, 15, 0, 7); ctx.fillStyle = fl ? '#fff' : BRASS; ctx.fill(); ctx.stroke();                            // корпус
   ctx.beginPath(); ctx.arc(0, 0, 10.8, 0, 7); ctx.fillStyle = fl ? '#fff' : CREAM; ctx.fill(); ctx.lineWidth = 1.6; ctx.stroke();
