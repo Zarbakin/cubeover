@@ -705,7 +705,6 @@ const TER = {
   chains: [[120, 490, [[120, 400], [170, 400], [240, 364], [320, 364], [350, 340], [380, 340], [440, 370], [490, 400]]], [880, 1050, [[880, 400], [960, 364], [1050, 364]]], [1860, 2090, [[1860, 400], [1930, 356], [2020, 356], [2090, 400]]], [2480, 2690, [[2480, 400], [2540, 440], [2630, 440], [2690, 400]]], [1540, 1690, [[1540, 400], [1590, 364], [1640, 364], [1690, 400]]]],
   crypt:  [[140, 290, [[140, 400], [190, 364], [240, 364], [290, 400]]], [470, 740, [[470, 400], [540, 360], [640, 360], [700, 386], [740, 400]]], [920, 1090, [[920, 400], [960, 436], [1060, 436], [1090, 400]]], [1360, 1540, [[1360, 400], [1400, 440], [1500, 440], [1540, 400]]]],
   bridge: [[100, 480, [[100, 400], [180, 364], [300, 364], [340, 330], [400, 330], [440, 365], [480, 400]]], [900, 1240, [[900, 400], [960, 400], [1020, 364], [1090, 364], [1120, 330], [1160, 330], [1200, 365], [1240, 400]]], [1560, 1690, [[1560, 400], [1610, 364], [1650, 364], [1690, 400]]], [1850, 1990, [[1850, 400], [1900, 364], [1960, 364], [1990, 400]]], [2160, 2380, [[2160, 400], [2230, 364], [2300, 364], [2380, 400]]], [2560, 2690, [[2560, 400], [2620, 370], [2690, 400]]], [3030, 3230, [[3030, 400], [3090, 364], [3170, 364], [3230, 400]]]],
-  hall:   [[640, 810, [[640, 400], [690, 364], [760, 364], [810, 400]]], [200, 560, [[200, 400], [260, 364], [340, 364], [380, 330], [460, 330], [500, 364], [560, 400]]], [820, 1240, [[820, 400], [880, 436], [1000, 436], [1060, 400], [1110, 364], [1180, 364], [1240, 400]]], [1300, 1620, [[1300, 400], [1360, 364], [1420, 364], [1470, 330], [1540, 330], [1580, 364], [1620, 400]]], [1850, 2130, [[1850, 400], [1910, 436], [2040, 436], [2130, 400]]]],
   spires: [[140, 540, [[140, 400], [190, 364], [250, 364], [290, 330], [350, 330], [390, 364], [450, 364], [540, 400]]], [1110, 1290, [[1110, 400], [1160, 364], [1230, 364], [1290, 400]]], [2080, 2240, [[2080, 400], [2130, 364], [2190, 364], [2240, 400]]], [2440, 2690, [[2440, 400], [2490, 436], [2610, 436], [2690, 400]]]],
   ante:   [[140, 460, [[140, 400], [200, 364], [260, 364], [300, 330], [380, 330], [420, 364], [460, 400]]], [980, 1190, [[980, 400], [1040, 364], [1130, 364], [1190, 400]]], [1280, 1500, [[1280, 400], [1340, 436], [1440, 436], [1500, 400]]]],
   tw_entry: [[680, 890, [[680, 400], [740, 364], [820, 364], [890, 400]]], [1300, 1700, [[1300, 400], [1360, 364], [1430, 364], [1490, 330], [1550, 330], [1610, 364], [1650, 364], [1700, 400]]]],
@@ -721,7 +720,6 @@ const RUINS = {
   chains: [['column', 90, 1, 96], ['wall', 190, 1, 0, 80], ['rubble', 330], ['column', 1590, 1, 70], ['wall', 1650, 1, 0, 70], ['rubble', 1975], ['wall', 2730, 1, 0, 90]],
   crypt:  [['arch', 220, 1.1], ['rubble', 800], ['wall', 1000, 1, 0, 90], ['column', 1200, 1, 90], ['rubble', 1440], ['column', 1730, 1, 60]],
   bridge: [['column', 100, 1, 110], ['wall', 400, 1, 0, 85], ['rubble', 520], ['column', 1210, 1, 70], ['rubble', 1930], ['wall', 2600, 1, 0, 70], ['rubble', 3050], ['arch', 3230, 1.1], ['column', 3360, 1, 80]],
-  hall:   [['arch', 120, 1.2], ['column', 310, 1, 70], ['rubble', 430], ['wall', 930, 1, 0, 90], ['column', 1140, 1, 85], ['arch', 1500, 1.1], ['rubble', 1950], ['wall', 2160, 1, 0, 80], ['column', 2330, 1, 100]],
   spires: [['column', 110, 1, 90], ['wall', 210, 1, 0, 85], ['rubble', 420], ['column', 1480, 1, 80], ['rubble', 2160], ['column', 2650, 1, 60]],
   ante:   [['column', 160, 1, 90], ['wall', 250, 1, 0, 80], ['rubble', 1060], ['wall', 1300, 1, 0, 70], ['column', 1520, 1, 90]],
   arena:  [['column', 90, 1, 130], ['wall', 220, 1, 0, 100], ['column', 1300, 1, 130], ['rubble', 1220]],
@@ -2544,8 +2542,9 @@ function drawOrb(it, t) {
   const bob = Math.sin(t * 0.05) * 5, x = it.x, y = it.y + bob;
   const glow = it.type === 'sword' ? glowCyan : it.type === 'dash' ? glowCyan : it.type === 'dj' ? glowGold : it.type === 'orb' ? glowWarm : glowRed;
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (0.75 + 0.2 * Math.sin(t * 0.08)) * (it.fade === undefined ? 1 : it.fade);
-  ctx.drawImage(glow, x - 64, y - 64, 128, 128);
-  for (let i = 0; i < 6; i++) { const a = t * 0.04 + i * 1.047, rr = 30 + Math.sin(t * 0.07 + i) * 4; ctx.globalAlpha = 0.8 * (it.fade === undefined ? 1 : it.fade); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.6, 1.8, 0, 7); ctx.fill(); }
+  const sk = it.type === 'sword' ? 0.62 : 1;   // меч мельче остальных предметов
+  ctx.drawImage(glow, x - 64 * sk, y - 64 * sk, 128 * sk, 128 * sk);
+  for (let i = 0; i < 6; i++) { const a = t * 0.04 + i * 1.047, rr = (30 + Math.sin(t * 0.07 + i) * 4) * sk; ctx.globalAlpha = 0.8 * (it.fade === undefined ? 1 : it.fade); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.6, 1.8, 0, 7); ctx.fill(); }
   ctx.restore();
   ctx.save(); ctx.translate(x, y); if (it.reward) ctx.scale(1.35, 1.35); ctx.lineJoin = 'round'; ctx.lineWidth = 2.5; ctx.strokeStyle = '#0d0a14';
   if (it.type === 'shard') {      // красный кристалл
@@ -2553,7 +2552,7 @@ function drawOrb(it, t) {
     const g = ctx.createLinearGradient(-14, -19, 14, 19); g.addColorStop(0, '#ff8a8a'); g.addColorStop(0.5, '#e0182f'); g.addColorStop(1, '#8e0a1f');
     ctx.fillStyle = g; ctx.fill(); ctx.stroke(); ctx.fillStyle = 'rgba(255,235,235,0.6)'; ctx.beginPath(); ctx.moveTo(-3, -13); ctx.lineTo(-10, -3); ctx.lineTo(-5, -2); ctx.closePath(); ctx.fill();
   } else if (it.type === 'sword') {   // меч, воткнутый в камень: клинок, гарда, рукоять
-    ctx.scale(1.25, 1.25); ctx.rotate(0.12 + Math.sin(t * 0.03) * 0.05); ctx.lineJoin = 'round';
+    ctx.scale(0.8, 0.8); ctx.rotate(0.12 + Math.sin(t * 0.03) * 0.05); ctx.lineJoin = 'round'; ctx.lineWidth = 2.2;
     ctx.beginPath(); ctx.moveTo(-5, 4); ctx.lineTo(-5, -24); ctx.lineTo(0, -31); ctx.lineTo(5, -24); ctx.lineTo(5, 4); ctx.closePath();
     ctx.fillStyle = '#d6deee'; ctx.fill(); ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(-2.5, -24, 2, 24);
     ctx.fillStyle = '#d8b04a'; ctx.beginPath(); ctx.rect(-13, 4, 26, 6); ctx.fill(); ctx.stroke();
@@ -2597,7 +2596,7 @@ function drawLever(lv, t) {
   ctx.restore();
   if (!lv.on) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35 + 0.2 * Math.sin(t * 0.1); ctx.drawImage(glowRed, lv.x - 34, lv.y - 80, 68, 68); ctx.restore(); }
 }
-function drawBricks(x, y, w, h, base, seed) {
+function fillBricks(x, y, w, h, base, seed) {
   const r = rng(seed), ar = rng(seed * 31 + 777); ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
   const pal = ['#3d3860', '#363152', '#44406a', '#2f2b48'];
   for (let row = 0, yy = y; yy < y + h; yy += 17, row++) {
@@ -2607,16 +2606,74 @@ function drawBricks(x, y, w, h, base, seed) {
       ctx.strokeStyle = '#0a0710'; ctx.lineWidth = 2; ctx.strokeRect(xx, yy, bw, 17); ageBrick(ctx, xx, yy, bw, 17, ar, ageZone(xx, seed % 97), row === 0); xx += bw; }
   }
   ctx.restore();
+}
+function drawBricks(x, y, w, h, base, seed) {
+  fillBricks(x, y, w, h, base, seed);
   ctx.strokeStyle = '#07050c'; ctx.lineWidth = 3; ctx.strokeRect(x, y, w, h);
 }
+// Тайник в руинах: рваный обвалившийся силуэт, неправильный свод из выпавших камней, корни, завал и луч света из щели
 function drawMasses(t) {
+  const PAL = ['#3d3860', '#363152', '#44406a', '#2f2b48'];
+  const stone = (cx, base, w, h, r) => {   // неровный камень, стоящий основанием на base
+    ctx.beginPath(); ctx.moveTo(cx - w / 2, base); ctx.lineTo(cx - w * (0.3 + r() * 0.15), base - h * (0.6 + r() * 0.3)); ctx.lineTo(cx + w * (r() * 0.2 - 0.1), base - h); ctx.lineTo(cx + w * (0.25 + r() * 0.2), base - h * (0.5 + r() * 0.4)); ctx.lineTo(cx + w / 2, base); ctx.closePath();
+    ctx.fillStyle = PAL[Math.floor(r() * 4)]; ctx.fill(); ctx.strokeStyle = '#07050c'; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+  };
   for (const m of (room.masses || [])) {
-    drawBricks(m.x, m.y, m.w, m.h, null, Math.floor(m.x) + 7);
-    ctx.fillStyle = 'rgba(150,140,200,0.2)'; ctx.fillRect(m.x, m.y, m.w, 4);
-    if (world.cracks[m.crack]) {   // ниша вскрыта
-      const n = m.niche, g = ctx.createLinearGradient(0, n[1], 0, n[1] + n[3]); g.addColorStop(0, '#0a0610'); g.addColorStop(1, '#2a1418');
-      ctx.fillStyle = g; ctx.fillRect(n[0], n[1], n[2], n[3]);
-      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.25 + 0.1 * Math.sin(t * 0.06); ctx.drawImage(glowWarm, n[0] + n[2] / 2 - 90, n[1] - 20, 180, 120); ctx.restore();
+    const r = rng(Math.floor(m.x) + 7), x0 = m.x, x1 = m.x + m.w, y0 = m.y, y1 = m.y + m.h, seed = Math.floor(m.x) + 7;
+    // --- рваный силуэт массива: сколы сверху, выщербленные края ---
+    const top = [[x0, y0 + 2]], rt = [], lf = [];
+    for (let x = x0 + 12 + r() * 10; x < x1 - 8; x += 12 + r() * 16) top.push([x, y0 + (r() < 0.42 ? 5 + r() * 12 : r() * 2.5)]);
+    top.push([x1, y0 + 1]);
+    for (let y = y0 + 14; y < y1 - 8; y += 12 + r() * 12) rt.push([x1 - (r() < 0.45 ? 2 + r() * 5 : 0), y]);
+    for (let y = y1 - 14; y > y0 + 8; y -= 12 + r() * 12) lf.push([x0 + (r() < 0.45 ? 2 + r() * 5 : 0), y]);
+    const body = () => { ctx.beginPath(); top.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); rt.forEach(p => ctx.lineTo(p[0], p[1])); ctx.lineTo(x1, y1); ctx.lineTo(x0, y1); lf.forEach(p => ctx.lineTo(p[0], p[1])); ctx.closePath(); };
+    ctx.save(); body(); ctx.clip();
+    fillBricks(x0 - 10, y0, m.w + 20, m.h, null, seed);
+    ctx.fillStyle = 'rgba(150,140,200,0.2)'; ctx.fillRect(x0, y0, m.w, 4);
+    const sh = ctx.createLinearGradient(0, y0, 0, y1); sh.addColorStop(0, 'rgba(8,5,16,0)'); sh.addColorStop(1, 'rgba(8,5,16,0.35)'); ctx.fillStyle = sh; ctx.fillRect(x0, y0, m.w, m.h);
+    ctx.restore();
+    body(); ctx.strokeStyle = '#07050c'; ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.stroke();
+    for (let i = 0; i < 4; i++) stone(x0 + 20 + r() * (m.w - 40), y0 + 1, 7 + r() * 8, 4 + r() * 5, r);   // осыпавшиеся камни на кромке
+    if (m.niche && world.cracks[m.crack]) {
+      const n = m.niche, nx = n[0], ny = n[1], nw = n[2], nh = n[3], fl = ny + nh, K = Math.max(5, Math.round(nw / 26));
+      // свод: неровная дуга, провисающая у стен
+      const ce = [];
+      for (let i = 0; i <= K; i++) { const u = i / K, v = Math.pow(Math.sin(Math.PI * u), 0.7); ce.push([nx + u * nw + (i && i < K ? (r() - 0.5) * 9 : 0), ny + 12 - v * 22 + (r() - 0.5) * 8]); }
+      const lw = [[nx + 3 + r() * 6, fl - nh * 0.28], [nx + 8 + r() * 8, fl - nh * 0.6]], rw = [[nx + nw - 8 - r() * 9, fl - nh * 0.55], [nx + nw - 2 - r() * 8, fl - nh * 0.22]];   // стены неровные, с наклоном
+      const cav = () => { ctx.beginPath(); ctx.moveTo(nx, fl); lw.forEach(p => ctx.lineTo(p[0], p[1])); ce.forEach(p => ctx.lineTo(p[0], p[1])); rw.forEach(p => ctx.lineTo(p[0], p[1])); ctx.lineTo(nx + nw, fl); ctx.closePath(); };
+      ctx.save(); cav(); ctx.clip();
+      const g = ctx.createLinearGradient(0, ny - 12, 0, fl); g.addColorStop(0, '#06030a'); g.addColorStop(1, '#2a1418'); ctx.fillStyle = g; ctx.fillRect(nx - 4, ny - 20, nw + 8, nh + 24);
+      ctx.globalAlpha = 0.26; fillBricks(nx - 4, ny - 20, nw + 8, nh + 24, '#241c38', seed + 5); ctx.globalAlpha = 1;   // старая кладка задней стены
+      const vg = ctx.createRadialGradient(nx + nw / 2, fl - 22, 8, nx + nw / 2, fl - 22, nw * 0.62); vg.addColorStop(0, 'rgba(255,170,90,0.14)'); vg.addColorStop(0.6, 'rgba(5,3,10,0.25)'); vg.addColorStop(1, 'rgba(5,3,10,0.78)'); ctx.fillStyle = vg; ctx.fillRect(nx - 4, ny - 20, nw + 8, nh + 24);
+      ctx.strokeStyle = 'rgba(4,2,8,0.8)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+      for (let i = 0; i < 2; i++) { let cx = nx + 20 + r() * (nw - 40), cy = ny + 6; ctx.beginPath(); ctx.moveTo(cx, cy); for (let k = 0; k < 4; k++) { cx += (r() - 0.5) * 16; cy += 12 + r() * 8; ctx.lineTo(cx, cy); } ctx.stroke(); }
+      // корни и сталактиты с потолка
+      ctx.lineCap = 'round';
+      for (let i = 0; i < 4; i++) { const p = ce[1 + Math.floor(r() * (K - 1))], len = 12 + r() * 24; ctx.strokeStyle = '#0d0813'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(p[0], p[1] - 2); ctx.quadraticCurveTo(p[0] + (r() - 0.5) * 12, p[1] + len * 0.5, p[0] + (r() - 0.5) * 10 + Math.sin(t * 0.02 + i) * 1.2, p[1] + len); ctx.stroke(); }
+      for (let i = 0; i < 3; i++) { const p = ce[1 + Math.floor(r() * (K - 1))], hh = 7 + r() * 11; ctx.beginPath(); ctx.moveTo(p[0] - 5, p[1] - 1); ctx.lineTo(p[0] + (r() - 0.5) * 3, p[1] + hh); ctx.lineTo(p[0] + 5, p[1] - 1); ctx.closePath(); ctx.fillStyle = '#2f2b48'; ctx.fill(); ctx.strokeStyle = '#07050c'; ctx.lineWidth = 1.6; ctx.stroke(); }
+      // завал: упавшая плита у стены и камни на полу
+      const sx = r() < 0.5 ? nx + 4 : nx + nw - 38;
+      ctx.beginPath(); ctx.moveTo(sx, fl); ctx.lineTo(sx + 10, fl - 24 - r() * 6); ctx.lineTo(sx + 36, fl - 8); ctx.lineTo(sx + 34, fl); ctx.closePath(); ctx.fillStyle = '#35305a'; ctx.fill(); ctx.strokeStyle = '#07050c'; ctx.lineWidth = 2; ctx.stroke();
+      for (let i = 0; i < 7; i++) stone(nx + 10 + r() * (nw - 20), fl + 1, 5 + r() * 9, 3 + r() * 6, r);
+      { const px = sx < nx + 10 ? nx + nw - 26 : nx + 24; stone(px, fl + 1, 26, 15, r); stone(px + 12, fl + 1, 18, 11, r); stone(px - 4, fl - 11, 16, 10, r); }   // груда обвалившихся камней
+      // луч света из щели в своде
+      const gx = nx + nw * (0.4 + r() * 0.3), gy = ce[Math.round((gx - nx) / nw * K)][1];
+      const lg = ctx.createLinearGradient(0, gy, 0, fl); lg.addColorStop(0, 'rgba(255,220,160,0.32)'); lg.addColorStop(1, 'rgba(255,200,130,0)');
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.55 + 0.2 * Math.sin(t * 0.05); ctx.fillStyle = lg;
+      ctx.beginPath(); ctx.moveTo(gx - 4, gy); ctx.lineTo(gx + 6, gy); ctx.lineTo(gx + 30, fl); ctx.lineTo(gx - 22, fl); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 0.7; ctx.fillStyle = '#ffe6b0'; for (let i = 0; i < 6; i++) { const dy = (t * 0.14 + i * 19) % (fl - gy), q = dy / (fl - gy); ctx.fillRect(gx + (q * 4 - 8) + Math.sin(t * 0.02 + i * 2) * 7 + i * 2, gy + dy, 1.6, 1.6); }
+      ctx.restore();
+      ctx.restore();
+      cav(); ctx.strokeStyle = '#07050c'; ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.stroke();
+      // камни свода (клинья): часть выпала, часть сползла
+      for (let i = 0; i < K; i++) {
+        if (r() < 0.2) continue;
+        const a = ce[i], b = ce[i + 1], d = 9 + r() * 5, sl = (r() - 0.5) * 2.5;
+        ctx.beginPath(); ctx.moveTo(a[0], a[1] + sl); ctx.lineTo(b[0], b[1] + sl); ctx.lineTo(b[0] + (r() - 0.5) * 4, b[1] - d); ctx.lineTo(a[0] + (r() - 0.5) * 4, a[1] - d); ctx.closePath();
+        ctx.fillStyle = PAL[Math.floor(r() * 4)]; ctx.fill(); ctx.strokeStyle = '#0a0710'; ctx.lineWidth = 1.8; ctx.stroke();
+      }
+      for (let i = 0; i < 5; i++) { const p = ce[1 + Math.floor(r() * (K - 1))]; stone(p[0] + (r() - 0.5) * 14, p[1] - 6 - r() * 3, 12 + r() * 12, 8 + r() * 8, r); }   // валуны на своде
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.25 + 0.1 * Math.sin(t * 0.06); ctx.drawImage(glowWarm, nx + nw / 2 - 90, ny - 20, 180, 120); ctx.restore();
     }
   }
 }
