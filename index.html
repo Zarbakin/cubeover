@@ -466,7 +466,7 @@ const ROOMS = {
     masses: [{x: 1740, y: 300, w: 260, h: 100, niche: [1770, 330, 190, 70], crack: 'cr1'}],
     barriers: [{kind: 'crack', id: 'cr1', x: 1740, y: 330, w: 30, h: 70, hp: 3}],
     items: [{type: 'shard', id: 's1', x: 1865, y: 366}],
-    bulbs: [[600, 270], [650, 270], [700, 270], [820, 372], [900, 330], [960, 300], [1100, 372], [1200, 372], [1260, 372], [1330, 372], [1460, 372], [1560, 372], [1660, 372]],
+    bulbs: [[590, 270], [690, 270], [820, 372], [900, 330], [960, 300], [1100, 372], [1200, 372], [1260, 372], [1330, 372], [1460, 372], [1560, 372], [1660, 372]],
     mobs: [{kind: 'cr', type: 'guard', x: 700, min: 600, max: 860}, {kind: 'cr', type: 'guard', x: 1150, min: 1060, max: 1450}, {kind: 'cr', type: 'warden', x: 1560, min: 1500, max: 1700}], lanterns: [380], banners: [700, 1500],
     npcs: [{id: 'moss', name: 'МОХ', top: 52, x: 1280, y: 300, scene: 'gate'}],
     exits: [EX(1984, 100, 16, 200, 'chains', 70, 400, 1)]
@@ -649,11 +649,12 @@ const LOST = {
   kettle: {name: 'Чайник без носика', text: 'Из него наливали чай на двоих. Одна из двух чашек в углу рисунка — совсем маленькая.'},
   alarm:  {name: 'Ходики без стрелок', text: 'Часы показывают без пяти полночь. Тик бы сказал: время просто ждало, пока его заведут.'}
 };
-const BAG_WHO = ['Пусто. Только меч и ощущение, что ты что-то забыл.', 'Ты кому-то принадлежал. Или кто-то принадлежал тебе.', 'Кто-то писал о тебе. И просил не помнить — до времени.', 'У тебя был кто-то, кто заботился. Даже игрушку оставил.', 'Были вечера, чай и музыка. Тебя ждали дома.', 'Осталась одна вещь. Ответ уже почти слышен.', 'Ты — первая искра Великой Лампы. Фонарщик спрятал тебя в сумке, чтобы город смог загореться снова.'];
+const BAG_WHO = ['Пусто. Только ощущение, что ты что-то забыл.', 'Ты кому-то принадлежал. Или кто-то принадлежал тебе.', 'Кто-то писал о тебе. И просил не помнить — до времени.', 'У тебя был кто-то, кто заботился. Даже игрушку оставил.', 'Были вечера, чай и музыка. Тебя ждали дома.', 'Осталась одна вещь. Ответ уже почти слышен.', 'Ты — первая искра Великой Лампы. Фонарщик спрятал тебя в сумке, чтобы город смог загореться снова.'];
 const lostItem = (id, x, y) => ({type: 'lost', id: 'lost_' + id, lost: id, x, y});
 (function () {
   const R = ROOMS, add = (r, it) => (R[r].items = R[r].items || []).push(it);
-  R.gate.hidden = [{x: 770, y: 215, w: 130}];                      add('gate', lostItem('tag', 835, 181));
+  add('gate', {type: 'sword', id: 'sword', x: 635, y: 256});          // меч лежит на каменной площадке у Врат — до него надо допрыгнуть
+  R.hall.hidden = [{x: 1860, y: 250, w: 130}];                      add('hall', lostItem('tag', 1925, 216));   // бирка — на скрытой площадке у фонаря Зала Лампочек
   R.chains.lanterns.push(1800); R.chains.hidden = [{x: 1930, y: 205, w: 130}]; add('chains', lostItem('note', 1995, 171));
   R.bridge.lanterns.push(2400); R.bridge.hidden = [{x: 2560, y: 195, w: 130}]; add('bridge', lostItem('toy', 2625, 161));
   R.shaft.hidden = [{x: 440, y: -330, w: 130}];                    add('shaft', lostItem('box', 505, -364));
@@ -716,69 +717,77 @@ Object.keys(TER).forEach(id => TER[id].forEach(([a, b, k]) => terrain(id, a, b, 
 Object.keys(ROOMS).forEach(id => { const R = ROOMS[id]; (R.bulbs || []).forEach(b => { if (b[1] === 372) { const g = topAt(R, b[0]); if (g !== null) b[1] = g - 28; } }); });
 // руины: декор без коллизий, стоит на земле (y считается по рельефу)
 const RUINS = {
-  gate:   [['arch', 230, 1.15], ['column', 470, 1, 80], ['rubble', 640], ['post', 830], ['wall', 1090, 1, 0, 95], ['crate', 1340], ['cart', 1532], ['rubble', 1620]],
-  chains: [['column', 90, 1, 96], ['wall', 190, 1, 0, 80], ['rubble', 330], ['crate', 410], ['post', 930], ['hut', 1010, 0.9], ['column', 1590, 1, 70], ['wall', 1650, 1, 0, 70], ['rubble', 1975], ['cart', 2330], ['cog', 2400, 1.1], ['post', 2560], ['crate', 2610], ['wall', 2730, 1, 0, 90]],
-  crypt:  [['arch', 220, 1.1], ['cog', 590, 1], ['rubble', 800], ['wall', 1000, 1, 0, 90], ['column', 1200, 1, 90], ['crate', 1290], ['rubble', 1440], ['post', 1640], ['column', 1730, 1, 60]],
-  bridge: [['column', 100, 1, 110], ['cart', 240], ['wall', 400, 1, 0, 85], ['rubble', 520], ['post', 905], ['hut', 1062, 0.85], ['column', 1210, 1, 70], ['rubble', 1930], ['crate', 2200], ['cog', 2290, 1], ['post', 2420], ['wall', 2600, 1, 0, 70], ['rubble', 3050], ['arch', 3230, 1.1], ['column', 3360, 1, 80]],
-  hall:   [['arch', 120, 1.2], ['column', 310, 1, 70], ['rubble', 430], ['post', 640], ['hut', 700, 0.9], ['wall', 930, 1, 0, 90], ['column', 1140, 1, 85], ['crate', 1260], ['arch', 1500, 1.1], ['post', 1790], ['rubble', 1950], ['wall', 2160, 1, 0, 80], ['column', 2330, 1, 100]],
-  spires: [['column', 110, 1, 90], ['wall', 210, 1, 0, 85], ['cog', 290, 1.2], ['rubble', 420], ['post', 560], ['crate', 1195], ['column', 1480, 1, 80], ['hut', 1980, 0.85], ['rubble', 2160], ['cart', 2560], ['column', 2650, 1, 60]],
-  ante:   [['column', 160, 1, 90], ['wall', 250, 1, 0, 80], ['cog', 340, 1], ['post', 720], ['rubble', 1060], ['crate', 1100], ['wall', 1300, 1, 0, 70], ['cart', 1380], ['column', 1520, 1, 90]],
+  gate:   [['arch', 230, 1.15], ['column', 470, 1, 80], ['rubble', 640], ['wall', 1090, 1, 0, 95], ['rubble', 1620]],
+  chains: [['column', 90, 1, 96], ['wall', 190, 1, 0, 80], ['rubble', 330], ['column', 1590, 1, 70], ['wall', 1650, 1, 0, 70], ['rubble', 1975], ['wall', 2730, 1, 0, 90]],
+  crypt:  [['arch', 220, 1.1], ['rubble', 800], ['wall', 1000, 1, 0, 90], ['column', 1200, 1, 90], ['rubble', 1440], ['column', 1730, 1, 60]],
+  bridge: [['column', 100, 1, 110], ['wall', 400, 1, 0, 85], ['rubble', 520], ['column', 1210, 1, 70], ['rubble', 1930], ['wall', 2600, 1, 0, 70], ['rubble', 3050], ['arch', 3230, 1.1], ['column', 3360, 1, 80]],
+  hall:   [['arch', 120, 1.2], ['column', 310, 1, 70], ['rubble', 430], ['wall', 930, 1, 0, 90], ['column', 1140, 1, 85], ['arch', 1500, 1.1], ['rubble', 1950], ['wall', 2160, 1, 0, 80], ['column', 2330, 1, 100]],
+  spires: [['column', 110, 1, 90], ['wall', 210, 1, 0, 85], ['rubble', 420], ['column', 1480, 1, 80], ['rubble', 2160], ['column', 2650, 1, 60]],
+  ante:   [['column', 160, 1, 90], ['wall', 250, 1, 0, 80], ['rubble', 1060], ['wall', 1300, 1, 0, 70], ['column', 1520, 1, 90]],
   arena:  [['column', 90, 1, 130], ['wall', 220, 1, 0, 100], ['column', 1300, 1, 130], ['rubble', 1220]],
-  shaft:  [['column', 80, 1, 100], ['wall', 150, 1, 0, 70], ['crate', 1100], ['rubble', 1210]],
-  tw_entry: [['column', 80, 1, 100], ['cart', 200], ['cog', 700, 1.2], ['rubble', 780], ['post', 1000], ['wall', 1220, 1, 0, 80], ['hut', 1400, 0.9], ['crate', 1740]],
-  tw_gates: [['column', 100, 1, 100], ['crate', 220], ['cog', 450, 1.1], ['rubble', 600], ['post', 900], ['wall', 1180, 1, 0, 80]],
-  tw_npc: [['crate', 120], ['cog', 330, 1], ['column', 700, 1, 90], ['crate', 960]],
+  shaft:  [['column', 80, 1, 100], ['wall', 150, 1, 0, 70], ['rubble', 1210]],
+  tw_entry: [['column', 80, 1, 100], ['rubble', 780], ['wall', 1220, 1, 0, 80]],
+  tw_gates: [['column', 100, 1, 100], ['rubble', 600], ['wall', 1180, 1, 0, 80]],
+  tw_npc: [['column', 700, 1, 90]],
   tw_arena: [['column', 60, 1, 120], ['column', 1450, 1, 120]],
   tw_boss: [['column', 80, 1, 140], ['column', 2020, 1, 140]]
 };
-Object.keys(RUINS).forEach(id => { const R = ROOMS[id]; R.ruins = RUINS[id].map(([k, x, s, h, w]) => ({k, x, s: s || 1, h: h || 80, w: w || 90, y: topAt(R, x) !== null ? topAt(R, x) : 400})); });
+// профиль земли под руиной (шаг 2 px): по нему руина «сажается» на рельеф — каждая опора стоит на своей ступени, без зазоров
+const RUIN_STEP = 2;
+function ruinHalf(o) { return o.k === 'arch' ? 104 * o.s : o.k === 'wall' ? o.w / 2 + 40 : o.k === 'column' ? 58 * o.s : 48 * o.s; }
+function buildRuin(R, [k, x, s, h, w]) {
+  const o = {k, x, s: s || 1, h: h || 80, w: w || 90}; o.fw = ruinHalf(o);
+  const yc = topAt(R, x); o.y = yc !== null ? yc : 400;
+  o.x0 = Math.floor(x - o.fw - 12); const n = Math.ceil((o.fw * 2 + 24) / RUIN_STEP) + 1; o.prof = [];
+  for (let i = 0; i < n; i++) { const g = topAt(R, o.x0 + i * RUIN_STEP); o.prof.push(g); }
+  // провалы (нет земли) закрываем ближайшей землёй: опора не повисает в воздухе
+  for (let i = 0; i < n; i++) if (o.prof[i] === null) { let j = 1, v = null; while (v === null && (i - j >= 0 || i + j < n)) { v = (i - j >= 0 && o.prof[i - j] !== null) ? o.prof[i - j] : (i + j < n ? o.prof[i + j] : null); j++; } o.prof[i] = v !== null ? v : o.y; }
+  return o;
+}
+Object.keys(RUINS).forEach(id => { const R = ROOMS[id]; R.ruins = RUINS[id].map(d => buildRuin(R, d)); });
 function drawRuins(t, cx) {
   for (const o of (room.ruins || [])) {
-    if (o.x + 170 < cx || o.x - 170 > cx + VW) continue;
-    const r = rng(Math.floor(o.x) + 7), s = o.s, ST = '#3d3860', SD = '#2a2644', SL = '#524d7e', WD = '#5a4030', WDD = '#3a281c', BR = '#8a6a2a', OL = '#0a0710';
+    if (o.x + o.fw < cx - 20 || o.x - o.fw > cx + VW + 20) continue;
+    const r = rng(Math.floor(o.x) + 7), s = o.s, ST = '#3d3860', SD = '#2a2644', SL = '#524d7e', OL = '#0a0710';
     const R = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); ctx.strokeRect(x, y, w, h); };
     const P = (pts, c) => { ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.fillStyle = c; ctx.fill(); ctx.stroke(); };
-    ctx.save(); ctx.translate(o.x, o.y + 3); ctx.scale(s, s); ctx.lineJoin = 'round'; ctx.strokeStyle = OL; ctx.lineWidth = 2.2 / s;
+    // земля в локальных координатах руины (y вниз от точки o.y, масштаб s): G(x) — поверхность в точке x, GM(a, b) — самая низкая точка на отрезке
+    const G = xl => { const i = Math.max(0, Math.min(o.prof.length - 1, Math.round((o.x + xl * s - o.x0) / RUIN_STEP))); return (o.prof[i] - o.y) / s; };
+    const GM = (a, b) => { let m = -1e9; for (let x = a; x <= b; x += RUIN_STEP / s) m = Math.max(m, G(x)); return m; };
+    const SINK = 2;   // чуть заглубляем в землю, чтобы между камнем и землёй не было щели
+    ctx.save();
+    // обрезка по рельефу: всё, что ниже поверхности земли, не рисуется — опоры плотно «врастают» в ступени
+    ctx.beginPath(); ctx.moveTo(o.x0, o.y - 600);
+    ctx.lineTo(o.x0 + (o.prof.length - 1) * RUIN_STEP, o.y - 600);
+    for (let i = o.prof.length - 1; i >= 0; i--) { const gx = o.x0 + i * RUIN_STEP; ctx.lineTo(gx + RUIN_STEP, o.prof[i] + 1); ctx.lineTo(gx, o.prof[i] + 1); }
+    ctx.closePath(); ctx.clip();
+    ctx.translate(o.x, o.y); ctx.scale(s, s); ctx.lineJoin = 'round'; ctx.strokeStyle = OL; ctx.lineWidth = 2.2 / s;
     if (o.k === 'column') {
-      const h = o.h; R(-20, -12, 40, 12, SD); R(-16, -h, 32, h - 12, ST); ctx.fillStyle = SL; ctx.fillRect(-14, -h + 2, 6, h - 16);
-      ctx.strokeStyle = 'rgba(10,7,16,0.5)'; ctx.lineWidth = 1.2; [-2, 6].forEach(x => { ctx.beginPath(); ctx.moveTo(x, -h + 8); ctx.lineTo(x, -14); ctx.stroke(); }); ctx.strokeStyle = OL; ctx.lineWidth = 2.2 / s;
-      P([[-16, -h], [-9, -h - 9], [-3, -h - 2], [4, -h - 13], [10, -h - 4], [16, -h]], ST);
-      P([[24, -10], [48, -10], [46, 0], [22, 0]], ST); P([[26, -10], [44, -10], [42, -17], [28, -17]], SL);
+      const b = GM(-22, 22) + SINK, h = o.h + b;                 // верх колонны остаётся на месте, низ уходит на самую низкую ступень
+      R(-20, b - 12, 40, 12 + SINK, SD); R(-16, -o.h, 32, h - 12, ST); ctx.fillStyle = SL; ctx.fillRect(-14, -o.h + 2, 6, h - 16);
+      ctx.strokeStyle = 'rgba(10,7,16,0.5)'; ctx.lineWidth = 1.2; [-2, 6].forEach(x => { ctx.beginPath(); ctx.moveTo(x, -o.h + 8); ctx.lineTo(x, b - 14); ctx.stroke(); }); ctx.strokeStyle = OL; ctx.lineWidth = 2.2 / s;
+      P([[-16, -o.h], [-9, -o.h - 9], [-3, -o.h - 2], [4, -o.h - 13], [10, -o.h - 4], [16, -o.h]], ST);
+      const gb = G(35) + SINK; P([[24, gb - 10], [48, gb - 10], [46, gb], [22, gb]], ST); P([[26, gb - 10], [44, gb - 10], [42, gb - 17], [28, gb - 17]], SL);
     } else if (o.k === 'arch') {
-      [-44, 44].forEach((x, i) => { R(x - 13, -14, 26, 14, SD); R(x - 10, -(i ? 92 : 112), 20, i ? 78 : 98, ST); }); R(-57, -126, 26, 14, SL);
+      // у каждой опоры своя ступень: столб тянется вниз до своей земли, а свод остаётся на прежней высоте
+      [-44, 44].forEach((x, i) => {
+        const top = i ? 92 : 112, b = GM(x - 15, x + 15) + SINK;
+        R(x - 13, b - 14, 26, 14 + SINK, SD); R(x - 10, -top, 20, top + b - 14, ST);
+      });
+      R(-57, -126, 26, 14, SL);
       ctx.beginPath(); ctx.arc(0, -112, 44, Math.PI, Math.PI * 1.62); ctx.arc(0, -112, 30, Math.PI * 1.62, Math.PI, true); ctx.closePath(); ctx.fillStyle = ST; ctx.fill(); ctx.stroke();
-      P([[34, -92], [48, -98], [44, -80]], ST); P([[56, -8], [80, -8], [74, 0], [52, 0]], ST);
+      P([[34, -92], [48, -98], [44, -80]], ST);
+      const gb = G(68) + SINK; P([[56, gb - 8], [80, gb - 8], [74, gb], [52, gb]], ST);
     } else if (o.k === 'wall') {
-      const w = o.w, n = Math.ceil(w / 15); for (let i = 0; i < n; i++) { const h = 24 + r() * 34 + (i % 4 === 0 ? 10 : 0); R(i * 15 - w / 2, -h, 15, h, i % 2 ? ST : '#443f6a'); }
-      ctx.strokeStyle = 'rgba(10,7,16,0.55)'; ctx.lineWidth = 1.2; for (let y = 12; y < 50; y += 14) { ctx.beginPath(); ctx.moveTo(-w / 2, -y); ctx.lineTo(w / 2, -y); ctx.stroke(); } ctx.strokeStyle = OL; ctx.lineWidth = 2.2 / s;
-      P([[w / 2 + 6, 0], [w / 2 + 24, -9], [w / 2 + 34, 0]], ST);
+      // каждый блок стены стоит на своей ступени
+      const w = o.w, n = Math.ceil(w / 15);
+      for (let i = 0; i < n; i++) {
+        const h = 24 + r() * 34 + (i % 4 === 0 ? 10 : 0), x = i * 15 - w / 2, g = GM(x, x + 15) + SINK; R(x, g - h, 15, h, i % 2 ? ST : '#443f6a');
+        ctx.strokeStyle = 'rgba(10,7,16,0.55)'; ctx.lineWidth = 1.2; for (let y = 12; y < h - 4; y += 14) { ctx.beginPath(); ctx.moveTo(x, g - y); ctx.lineTo(x + 15, g - y); ctx.stroke(); } ctx.strokeStyle = OL; ctx.lineWidth = 2.2 / s;
+      }
+      const gb = G(w / 2 + 20) + SINK; P([[w / 2 + 6, gb], [w / 2 + 24, gb - 9], [w / 2 + 34, gb]], ST);
     } else if (o.k === 'rubble') {
-      for (let i = 0; i < 6; i++) { const x = (r() - 0.5) * 70, y = -r() * 12, w = 10 + r() * 16, h = 8 + r() * 10; P([[x - w / 2, y], [x - w * 0.3, y - h], [x + w * 0.4, y - h * 0.8], [x + w / 2, y]], i % 2 ? ST : SD); }
-    } else if (o.k === 'crate') {
-      const box = (x, y, w, h) => { R(x, y, w, h, WD); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y + h); ctx.moveTo(x + w, y); ctx.lineTo(x, y + h); ctx.stroke(); R(x, y, w, 4, WDD); };
-      box(-30, -26, 26, 26); box(-4, -22, 22, 22); box(-22, -50, 22, 24);
-      ctx.beginPath(); ctx.ellipse(36, -10, 12, 14, 0, 0, 7); ctx.fillStyle = WDD; ctx.fill(); ctx.stroke(); ctx.strokeStyle = BR; ctx.beginPath(); ctx.moveTo(24, -14); ctx.lineTo(48, -14); ctx.moveTo(24, -6); ctx.lineTo(48, -6); ctx.stroke(); ctx.strokeStyle = OL;
-    } else if (o.k === 'cart') {
-      ctx.save(); ctx.rotate(-0.12); P([[-40, -28], [26, -28], [20, -8], [-34, -8]], WD); R(-40, -34, 66, 6, WDD); [-24, -6, 12].forEach(x => { ctx.beginPath(); ctx.moveTo(x, -28); ctx.lineTo(x, -8); ctx.stroke(); });
-      ctx.beginPath(); ctx.moveTo(26, -22); ctx.lineTo(60, -14); ctx.lineWidth = 4; ctx.stroke(); ctx.lineWidth = 2.2 / s; ctx.restore();
-      ctx.beginPath(); ctx.arc(-6, -14, 15, 0, 7); ctx.fillStyle = WDD; ctx.fill(); ctx.stroke(); ctx.strokeStyle = BR; ctx.lineWidth = 2; for (let i = 0; i < 4; i++) { const a = i * 0.79 + 0.3; ctx.beginPath(); ctx.moveTo(-6 - Math.cos(a) * 13, -14 - Math.sin(a) * 13); ctx.lineTo(-6 + Math.cos(a) * 13, -14 + Math.sin(a) * 13); ctx.stroke(); } ctx.strokeStyle = OL; ctx.lineWidth = 2.2 / s;
-      ctx.beginPath(); ctx.arc(30, -2, 9, 0, 7); ctx.fillStyle = WDD; ctx.fill(); ctx.stroke();
-    } else if (o.k === 'post') {
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(-4, -50, 12, -86); ctx.lineWidth = 6; ctx.stroke(); ctx.strokeStyle = '#4a4458'; ctx.lineWidth = 3; ctx.stroke(); ctx.strokeStyle = OL; ctx.lineWidth = 2.2 / s;
-      R(-6, -8, 12, 8, SD); P([[6, -92], [20, -92], [22, -78], [4, -78]], '#5a5468'); R(8, -86, 10, 8, '#3a2a18');
-      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.22 + 0.1 * Math.sin(t * 0.07 + o.x); ctx.drawImage(glowWarm, -22, -118, 70, 70); ctx.restore();
-    } else if (o.k === 'hut') {
-      R(-56, -92, 112, 92, '#2a2238'); R(-56, -92, 112, 6, SD);
-      ctx.strokeStyle = 'rgba(10,7,16,0.6)'; ctx.lineWidth = 1.4; for (let x = -48; x < 56; x += 16) { ctx.beginPath(); ctx.moveTo(x, -86); ctx.lineTo(x, 0); ctx.stroke(); } ctx.strokeStyle = OL; ctx.lineWidth = 2.2 / s;
-      R(-60, -96, 8, 96, WD); R(52, -96, 8, 60, WD); ctx.beginPath(); ctx.moveTo(-60, -60); ctx.lineTo(-20, -96); ctx.moveTo(60, -50); ctx.lineTo(30, -96); ctx.stroke();
-      P([[-66, -92], [-10, -134], [24, -112], [8, -104], [26, -92]], '#4a3a52');   // крыша с провалом
-      R(-36, -66, 26, 24, '#120c1a'); ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.18 + 0.08 * Math.sin(t * 0.05 + o.x); ctx.fillStyle = '#ffb060'; ctx.fillRect(-34, -64, 22, 20); ctx.restore();
-      R(14, -50, 24, 50, '#0e0814'); P([[40, -6], [62, -6], [56, 0], [38, 0]], ST);
-    } else if (o.k === 'cog') {
-      const rr = 38; ctx.save(); ctx.beginPath(); ctx.rect(-80, -90, 160, 93); ctx.clip(); ctx.translate(0, -8); ctx.rotate(0.35);
-      for (let i = 0; i < 12; i++) { ctx.save(); ctx.rotate(i / 12 * 6.283); R(-6, -rr - 9, 12, 14, '#7a5a2a'); ctx.restore(); }
-      ctx.beginPath(); ctx.arc(0, 0, rr, 0, 7); ctx.fillStyle = '#8a6a2a'; ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, rr * 0.6, 0, 7); ctx.fillStyle = '#4a3a1a'; ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, rr * 0.2, 0, 7); ctx.fillStyle = '#c8963e'; ctx.fill(); ctx.stroke(); ctx.restore();
-      P([[-50, 0], [-36, -12], [-22, 0]], ST); P([[30, 0], [46, -9], [60, 0]], SD);
+      for (let i = 0; i < 6; i++) { const x = (r() - 0.5) * 70, y = -r() * 12, w = 10 + r() * 16, h = 8 + r() * 10, g = GM(x - w / 2, x + w / 2) + SINK; P([[x - w / 2, g + y * 0], [x - w * 0.3, g - h], [x + w * 0.4, g - h * 0.8], [x + w / 2, g]], i % 2 ? ST : SD); }
     }
     ctx.restore();
   }
@@ -853,8 +862,36 @@ const vignette = (() => {
 })();
 
 // ====================== Предрендер: платформы ======================
+// Старение кладки: пятнами по стене то трещины, то выбитые углы, то выпавшие кирпичи и тёмные потёки
+function ageZone(x, seed) { return Math.sin(x * 0.011 + seed * 1.7) + Math.sin(x * 0.027 + seed * 0.6) * 0.8 + Math.sin(x * 0.05 - seed) * 0.4; }
+function ageBrick(g, x, y, bw, bh, ar, zone, edgeTop) {
+  const heavy = zone > 0.55, p = heavy ? 0.85 : (zone > 0.1 ? 0.3 : 0.05);
+  if (ar() > p) return;
+  const k = ar();
+  g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
+  if (k < 0.3) {                       // трещина зигзагом
+    g.strokeStyle = 'rgba(8,5,14,0.95)'; g.lineWidth = 2.2; g.beginPath();
+    let cx = x + 5 + ar() * (bw - 10), cy = y + 1; g.moveTo(cx, cy);
+    for (let i = 0; i < 3; i++) { cx += (ar() - 0.5) * 11; cy += bh / 3; g.lineTo(cx, cy); }
+    if (ar() < 0.5) { g.moveTo(cx, cy - 6); g.lineTo(cx + (ar() - 0.5) * 16, cy - 2); }
+    g.stroke();
+  } else if (k < 0.55) {               // выбитый угол
+    const c = ar() < 0.5 ? 0 : 1, sz = 4 + ar() * 5, cxx = c ? x + bw : x, cyy = edgeTop ? y + bh : y + bh;
+    g.fillStyle = 'rgba(8,5,14,0.9)'; g.beginPath(); g.moveTo(cxx, cyy); g.lineTo(cxx + (c ? -sz : sz), cyy); g.lineTo(cxx, cyy - sz); g.closePath(); g.fill();
+  } else if (k < 0.7 && !edgeTop) {    // выпавший кирпич
+    g.fillStyle = '#0a0710'; g.fillRect(x + 2, y + 2, bw - 4, bh - 4);
+    g.fillStyle = 'rgba(70,64,110,0.35)'; g.fillRect(x + 2, y + bh - 5, bw - 4, 2);
+  } else if (k < 0.85) {               // тёмный потёк и въевшаяся сырость
+    const gr = g.createLinearGradient(0, y, 0, y + bh); gr.addColorStop(0, 'rgba(10,6,20,0.7)'); gr.addColorStop(1, 'rgba(10,6,20,0)');
+    g.fillStyle = gr; g.fillRect(x + 1, y + 1, bw - 2, bh - 2);
+  } else {                             // выцветший, выщербленный камень
+    g.fillStyle = 'rgba(160,155,200,0.2)'; g.fillRect(x + 1, y + 1, bw - 2, bh - 2);
+    g.fillStyle = 'rgba(8,5,14,0.7)'; for (let i = 0; i < 4; i++) g.fillRect(x + 3 + ar() * (bw - 8), y + 3 + ar() * (bh - 8), 2, 2);
+  }
+  g.restore();
+}
 function buildPlatform(p, seed, theme) {
-  const r = rng(seed), pad = 34, top = 44, w = p.w;
+  const r = rng(seed), ar = rng(seed * 31 + 777), pad = 34, top = 44, w = p.w;
   const depth = p.g ? (p.dp || 170) : 70 + Math.floor(r() * 30);
   const W = w + pad * 2, H = top + depth + (p.g ? 10 : 100);
   const c = mk(W, H), g = c.getContext('2d');
@@ -885,6 +922,7 @@ function buildPlatform(p, seed, theme) {
       const bw = 30 + r() * 24;
       g.globalAlpha = fade * 0.9; g.fillStyle = pal[Math.floor(r() * 4)]; g.fillRect(x, y, bw, 17);
       g.globalAlpha = Math.min(1, fade + 0.2); g.strokeStyle = '#0a0710'; g.lineWidth = 2; g.strokeRect(x, y, bw, 17);
+      g.globalAlpha = Math.min(1, fade + 0.15); ageBrick(g, x, y, bw, 17, ar, ageZone(x, seed % 97), row === 0);
       x += bw;
     }
   }
@@ -942,7 +980,7 @@ const embers = [];
 
 const SAVE_KEY = 'forgotten-spires-metroidvania-v1';
 function newWorld() {
-  return {ab: {dash: false, dj: false, orb: false}, maxHp: 5, shards: 0, taken: {}, levers: {}, cracks: {}, items: {}, visited: {}, lit: {gate: [true]},
+  return {ab: {sword: false, dash: false, dj: false, orb: false}, maxHp: 5, shards: 0, taken: {}, levers: {}, cracks: {}, items: {}, visited: {}, lit: {gate: [true]},
           cp: {room: 'gate', idx: 0}, bulbs: 0, spent: 0, bag: {}, keeperMercy: false, keeperSpared: false, bossDead: false, clockDead: false, won: false, talk: {}, seen: {}};
 }
 function saveGame() {
@@ -951,7 +989,10 @@ function saveGame() {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify({v: 1, w: world})); } catch (e) {}
 }
 function loadSave() {
-  try { const s = localStorage.getItem(SAVE_KEY); if (!s) return null; const o = JSON.parse(s); return o && o.w && o.w.ab ? o : null; } catch (e) { return null; }
+  try { const s = localStorage.getItem(SAVE_KEY); if (!s) return null; const o = JSON.parse(s); if (!(o && o.w && o.w.ab)) return null;
+    // старые сохранения: меч выдавался сразу — оставляем его тем, кто уже играл
+    if (o.w.ab.sword === undefined) o.w.ab.sword = Object.keys(o.w.visited || {}).length > 1 || Object.keys(o.w.items || {}).length > 0;
+    return o; } catch (e) { return null; }
 }
 const hasSave = () => !!loadSave();
 
@@ -1077,8 +1118,9 @@ function showPopup(title, sub, col) { popup = {title, sub, col, t: 300}; }
 const bagCount = () => LOST_ORDER.filter(k => world && world.bag && world.bag[k]).length;
 function collectItem(it) {
   it.got = true; world.items[it.id] = true; freeze = 24; sfx.power();
-  puff(it.x, it.y, 40, it.type === 'dash' ? 'rgba(150,230,255,1)' : it.type === 'dj' ? 'rgba(255,230,150,1)' : it.type === 'orb' ? 'rgba(255,190,80,1)' : it.type === 'lost' ? 'rgba(255,226,160,1)' : 'rgba(255,110,120,1)', 4.5, true);
-  if (it.type === 'dash') { world.ab.dash = true; showPopup('РЫВОК', touchMode ? 'Кнопка рывка — стремительный бросок вперёд' : 'Shift — стремительный бросок вперёд. Неуязвим на время рывка', '#8fe8ff'); }
+  puff(it.x, it.y, 40, it.type === 'sword' ? 'rgba(220,235,255,1)' : it.type === 'dash' ? 'rgba(150,230,255,1)' : it.type === 'dj' ? 'rgba(255,230,150,1)' : it.type === 'orb' ? 'rgba(255,190,80,1)' : it.type === 'lost' ? 'rgba(255,226,160,1)' : 'rgba(255,110,120,1)', 4.5, true);
+  if (it.type === 'sword') { world.ab.sword = true; P.pose = null; showPopup('МЕЧ', touchMode ? 'Кнопка с мечом — удар' : 'X / J / ЛКМ — удар мечом', '#dfe9ff'); }
+  else if (it.type === 'dash') { world.ab.dash = true; showPopup('РЫВОК', touchMode ? 'Кнопка рывка — стремительный бросок вперёд' : 'Shift — стремительный бросок вперёд. Неуязвим на время рывка', '#8fe8ff'); }
   else if (it.type === 'dj') { world.ab.dj = true; showPopup('ДВОЙНОЙ ПРЫЖОК', touchMode ? 'Нажмите кнопку прыжка ещё раз в воздухе' : 'Нажмите прыжок ещё раз в воздухе', '#ffe9a0'); }
   else if (it.type === 'orb') { world.ab.orb = true; showPopup('ЭНЕРГОШАР', (it.reward ? 'Награда за Хранителя. ' : '') + (touchMode ? 'Кнопка с шаром — метнуть шар. 3 заряда, 1 заряд — 7 с' : 'C / L / ПКМ — метнуть шар. 3 заряда, 1 заряд — 7 с'), '#ffb43a'); }
   else if (it.type === 'lost') {
@@ -1142,6 +1184,8 @@ function onConfirm() {
 function syncTouchAbilities() {
   const d = document.getElementById('bDash');
   if (d) d.style.display = (world && world.ab.dash) ? '' : 'none';
+  const a = document.getElementById('bAtk');
+  if (a) a.style.display = (world && world.ab.sword) ? '' : 'none';
   const o = document.getElementById('bOrb');
   if (o) o.style.display = (world && world.ab.orb) ? '' : 'none';
 }
@@ -1299,9 +1343,12 @@ function killGummy(e) {
   e.dead = 36; e.vx = 0; e.chase = false; e.flash = 0;
   debris(e.x + e.w / 2, e.y + 24, 5, 4, 14);
 }
+// Взмах меча: замах → удар дугой → возврат в стойку (доли от ATK_T)
+const ATK_T = 18, ATK_W = 0.2, ATK_S = 0.5, ATK_HIT0 = 0.34, ATK_HIT1 = 0.64;
+let SWORD_CAP = null;   // сюда renderPlayer кладёт положение острия меча (для следа удара)
 function swordHit() {
   const p = P, cx = p.x + p.w / 2;
-  const box = {x: p.face > 0 ? cx - 6 : cx - 90, y: p.y - 8, w: 96, h: p.h + 16};
+  const box = {x: p.face > 0 ? cx - 6 : cx - 90, y: p.y - 14, w: 96, h: p.h + 22};
   for (let i = booms.length - 1; i >= 0; i--) {
     const m = booms[i];
     if (m.state !== 'reflected' && hitR(box, {x: m.x - 20, y: m.y - 20, w: 40, h: 40})) {
@@ -1378,7 +1425,6 @@ function update() {
   if (shake < 0.3) shake = 0;
   stepFlip();
   if (heroFlash > 0) heroFlash--; if (glowT > 0) glowT--;
-  if (state === 'play') growMoss();
   embers.forEach(e => { e.y += e.vy; e.x += Math.sin(tick * 0.01 + e.ph) * 0.2; if (e.y < -10) { e.y = VH + 10; e.x = Math.random() * VW; } });
   for (let i = particles.length - 1; i >= 0; i--) {
     const q = particles[i]; q.x += q.vx; q.y += q.vy; q.vy += q.g; if (q.vr) q.rot += q.vr; if (--q.life <= 0) particles.splice(i, 1);
@@ -1407,9 +1453,10 @@ function update() {
     if (dir) p.face = dir;
   }
   if (p.atkCd > 0) p.atkCd--;
+  if (!world.ab.sword) p.atkBuf = 0;
   if (p.atkBuf > 0) {
     p.atkBuf--;
-    if (p.atkCd <= 0 && p.stun === 0) { p.atk = 16; p.atkCd = 26; p.swing = ++swingId; p.atkBuf = 0; p.vx += p.face * 1.5; sfx.slash(); }
+    if (p.atkCd <= 0 && p.stun === 0) { p.atk = ATK_T; p.atkCd = 24; p.swing = ++swingId; p.atkBuf = 0; p.vx += p.face * 0.6; p.tipTrail = []; sfx.slash(); }
   }
   if (p.dashCd > 0) p.dashCd--;
   if (p.dashBuf > 0) {
@@ -1420,8 +1467,12 @@ function update() {
       sfx.dash(); puff(p.x + p.w / 2, p.y + p.h, 8, 'rgba(160,140,190,0.7)', 2.2);
     }
   }
-  if (p.atk > 0) { p.atk--; const u = 1 - p.atk / 16; if (u > 0.25 && u < 0.75) swordHit();
-    if (u > 0.2 && u < 0.6) puff(p.x + p.w / 2 + p.face * (30 + u * 70), p.y + 12 + u * 28, 2, 'rgba(170,225,255,1)', 1.4, true); }
+  if (p.atk > 0) {
+    p.atk--; const u = 1 - p.atk / ATK_T;
+    if (p.atk === Math.round(ATK_T * (1 - ATK_W))) p.vx += p.face * 1.6;                 // короткий выпад в начале удара
+    if (u > ATK_HIT0 && u < ATK_HIT1) swordHit();                                          // урон — только пока клинок идёт вперёд
+    if (u > 0.34 && u < 0.62 && p.tipW) puff(p.tipW.x, p.tipW.y, 2, 'rgba(170,225,255,1)', 1.4, true);   // искры с острия
+  }
   // ==== Энергошар ====
   if(p.orbCd>0)p.orbCd--;
   if(en<ORB_MAX){if(++orbT>=ORB_REGEN){en++;orbT=0;sfx.orbCharge();}}else orbT=0;
@@ -1810,16 +1861,21 @@ function drawSwordBlade() {
   ctx.beginPath(); ctx.moveTo(-24, 80); ctx.lineTo(24, 80); ctx.lineTo(20, 560); ctx.lineTo(0, 630); ctx.lineTo(-20, 560); ctx.closePath(); part('#cfd8e8');
   ctx.strokeStyle = C_OUT; ctx.lineWidth = 17;
 }
-function drawArm(sx, sy, a1, a2, sword) {
+function drawArm(sx, sy, a1, a2, sword, sa) {
   ctx.save(); ctx.translate(sx, sy); ctx.rotate(a1);
   rrect(-40, -12, 80, 128, 14); part(C_Y);
   ctx.translate(0, 106); ctx.rotate(a2);
   rrect(-37, -8, 74, 104, 14); part(C_Y);
   ctx.translate(0, 90);
-  if (sword) drawSwordHandle();
+  const rel = sword ? sa - a1 - a2 : 0;                                   // угол меча относительно предплечья
+  const inHand = fn => { ctx.save(); ctx.translate(0, 30); ctx.rotate(rel); ctx.translate(0, -30); fn(); ctx.restore(); };   // поворот вокруг хвата
+  if (sword) inHand(drawSwordHandle);
   rrect(-48, 10, 24, 32, 7); part(C_Y);
   ctx.beginPath(); ctx.moveTo(-34, 0); ctx.lineTo(34, 0); ctx.lineTo(38, 48); ctx.lineTo(16, 62); ctx.lineTo(-12, 60); ctx.lineTo(-38, 46); ctx.closePath(); part(C_Y);
-  if (sword) drawSwordBlade();
+  if (sword) inHand(() => {
+    drawSwordBlade();
+    if (SWORD_CAP && ctx.getTransform) { const m = ctx.getTransform(); SWORD_CAP.tip = m.transformPoint({x: 0, y: 640}); SWORD_CAP.mid = m.transformPoint({x: 0, y: 400}); }
+  });
   ctx.restore();
 }
 function drawLeg(hx, hy, ang, knee) {
@@ -1830,6 +1886,7 @@ function drawLeg(hx, hy, ang, knee) {
   ctx.restore();
 }
 const lerpN = (a, b, k) => a + (b - a) * k;
+const SW_READY = 4.33;   // стойка: клинок вперёд и немного вверх
 const clampN = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 // ---------- Циклы анимации (как на референсе) ----------
 // ХОДЬБА, 8 кадров: контакт, приседание, переход, подъём, отталкивание, подъём ноги, вынос, замах.
@@ -1892,16 +1949,33 @@ function updatePose(p, t) {
     Object.assign(T, {aL1: 1.5, aL2: -0.1, aR1: 1.3, aR2: 0, lL: 0.7, lR: 0.45, kL: 0.6, kR: 0.6, wL: 0.5, wR: 0.5, lean: 0.2, sx: 1.1, sy: 0.93, hb: 0, tb: 0, head: 0.08});
     fl = 0.7;
   }
+  // Меч всегда в ближней руке. Угол клинка (sa) задаётся в координатах тела: 4.33 ≈ вперёд и чуть вверх.
+  T.sa = p.dash > 0 ? 1.75 : SW_READY + 0.3 * (T.aR1 + T.aR2) + (run && !air ? 0.2 : 0);
   const swing = p.atk > 0;
+  if (!swing && p.pose && p.pose.aR1 > 3.2) p.pose.aR1 -= Math.PI * 2;   // после взмаха рука вернулась «через полный оборот» — сбрасываем
   if (swing) {
-    const u = 1 - p.atk / 16, strike = clampN((u - 0.14) / 0.45, 0, 1), ez = 1 - Math.pow(1 - strike, 3);
-    T.aR1 = u < 0.14 ? 2.9 : 2.9 + (-1.75 - 2.9) * ez; T.aR2 = 0.1; T.aL1 = 0.8;
-    T.lean = u < 0.14 ? -0.04 : 0.02 + 0.07 * ez;
-    if (!air) { T.lL = 0.25; T.lR = -0.3; T.kL = 0.3; T.kR = 0.1; T.wL = 0; T.wR = 0; T.hb = 1; T.tb = 0.6; }
-    fl = 0.8;
+    const u = 1 - p.atk / ATK_T, cl = k => clampN(k, 0, 1);
+    let r1, r2, sa, ln, hb = 1, l1 = 0.25, l2 = -0.3, k1 = 0.3, k2 = 0.1, f1 = 0.2, f2 = -0.7;
+    if (u < ATK_W) {                         // ЗАМАХ: меч уходит вверх-назад, корпус чуть откидывается и приседает
+      const k = 1 - Math.pow(1 - cl(u / ATK_W), 2);
+      r1 = lerpN(0.3, 2.7, k); r2 = lerpN(-0.3, -0.5, k); sa = lerpN(SW_READY, 2.5, k); ln = lerpN(0, -0.08, k);
+      hb = 1 + 5 * k; l1 = lerpN(0.04, 0.4, k); l2 = lerpN(-0.04, -0.25, k); k1 = 0.3; k2 = 0.45 * k;
+    } else if (u < ATK_S) {                  // УДАР: дуга сверху вниз-вперёд, ускорение к концу, выпад вперёд
+      const k = cl((u - ATK_W) / (ATK_S - ATK_W)), e = Math.pow(k, 1.35);
+      r1 = lerpN(2.7, 4.55, e); r2 = lerpN(-0.5, 0.05, e); sa = lerpN(2.5, 5.35, e); ln = lerpN(-0.08, 0.11, e);
+      hb = lerpN(6, 3, e); l1 = 0.45; l2 = -0.55; k1 = 0.2; k2 = 0.4;
+    } else {                                 // ВЫХОД: клинок на мгновение замирает, затем плавно возвращается в стойку
+      const k = cl((u - ATK_S - 0.12) / (1 - ATK_S - 0.12)), e = k * k * (3 - 2 * k);
+      r1 = lerpN(4.55, 0.3 + Math.PI * 2, e); r2 = lerpN(0.05, -0.3, e); sa = lerpN(5.35, SW_READY, e); ln = lerpN(0.11, 0, e);
+      hb = lerpN(3, 1, e); l1 = lerpN(0.45, 0.04, e); l2 = lerpN(-0.55, -0.04, e); k1 = lerpN(0.2, 0.08, e); k2 = lerpN(0.4, 0.08, e);
+    }
+    T.aR1 = r1; T.aR2 = r2; T.sa = sa; T.lean = ln;
+    T.aL1 = u < ATK_W ? -0.5 : u < ATK_S ? lerpN(-0.5, 1.1, cl((u - ATK_W) / (ATK_S - ATK_W))) : lerpN(1.1, 0.0, cl((u - ATK_S) / (1 - ATK_S)));   // дальняя рука — противовес
+    if (!air) { T.lL = l1; T.lR = l2; T.kL = k1; T.kR = k2; T.wL = 0; T.wR = 0; T.hb = hb; T.tb = hb * 0.6; }
+    fl = 0.78;
   }
   if (p.stun > 0) {
-    Object.assign(T, {aL1: 1.3, aL2: -0.2, aR1: -1.3, aR2: 0.2, lL: 0.25, lR: -0.2, kL: 0.3, kR: 0.1, wL: 0, wR: 0, lean: -0.1, eye: 0.55, hb: 2, tb: 1});
+    Object.assign(T, {sa: 3.9, aL1: 1.3, aL2: -0.2, aR1: -1.3, aR2: 0.2, lL: 0.25, lR: -0.2, kL: 0.3, kR: 0.1, wL: 0, wR: 0, lean: -0.1, eye: 0.55, hb: 2, tb: 1});
     fl = 0.7;
   }
   // стопа = нужный угол относительно земли минус повороты бедра и колена (глаза остаются на одном уровне)
@@ -1909,7 +1983,7 @@ function updatePose(p, t) {
   T.es = vxn * 6;
   if (!p.pose) p.pose = {...T};
   const ps = p.pose;
-  for (const k of ['aL1', 'aL2', 'aR1', 'aR2', 'lL', 'lR', 'kL', 'kR', 'fL', 'fR', 'hs']) ps[k] = lerpN(ps[k], T[k], fl);
+  for (const k of ['aL1', 'aL2', 'aR1', 'aR2', 'lL', 'lR', 'kL', 'kR', 'fL', 'fR', 'hs', 'sa']) ps[k] = lerpN(ps[k], T[k], fl);
   for (const k of ['hb', 'tb', 'lean', 'head', 'sx', 'sy', 'eye', 'ey', 'es']) ps[k] = lerpN(ps[k], T[k], (k === 'hb' || k === 'tb') ? Math.min(1, fb + 0.2) : fb);
   const bt = vxn * 0.04 + clampN(-p.vy * 0.004, -0.05, 0.05) + (run ? Math.sin(p.walk) * 0.04 : 0);
   p.bagV += (bt - p.bagA) * 0.15; p.bagV *= 0.7; p.bagA += p.bagV;
@@ -1933,7 +2007,7 @@ function renderPlayer(ps, cx, fy, face, alpha) {
   drawLeg(342 + ps.hs, 688, ps.lL, ps.kL, ps.fL);   // дальняя нога
   drawLeg(342 - ps.hs, 688, ps.lR, ps.kR, ps.fR);   // ближняя нога
   ctx.save(); ctx.translate(0, tb);
-  drawArm(462, 442, ps.aL1, ps.aL2, false);   // дальняя рука: за корпусом, прячется при махе назад
+  drawArm(462, 442, ps.aL1, ps.aL2, false, 0);   // дальняя рука: за корпусом, прячется при махе назад
   // торс
   ctx.beginPath(); ctx.moveTo(232, 395); ctx.lineTo(458, 395); ctx.lineTo(462, 688); ctx.lineTo(208, 688); ctx.lineTo(214, 500); ctx.closePath(); part(C_Y);
   // ремень и сумка (от ближнего плеча к дальнему бедру)
@@ -1948,7 +2022,7 @@ function renderPlayer(ps, cx, fy, face, alpha) {
   ctx.fillStyle = '#c9a24a'; rrect(452, 584, 24, 28, 5); ctx.fill(); ctx.strokeStyle = C_OUT; ctx.lineWidth = 8; ctx.stroke();
   ctx.restore();
   ctx.lineWidth = 17; ctx.strokeStyle = C_OUT;
-  drawArm(238, 442, ps.aR1, ps.aR2, swing);   // ближняя рука: всегда на виду, поверх корпуса
+  drawArm(238, 442, ps.aR1, ps.aR2, !!(world && world.ab.sword), ps.sa);   // ближняя рука с мечом: всегда на виду, поверх корпуса
   ctx.restore();
 
   // голова-куб (с наклоном вокруг «шеи»)
@@ -1977,36 +2051,46 @@ function drawPlayer(p, t) {
     ctx.restore();
   }
   const flick = p.inv > 0 && state === 'play' && Math.floor(p.inv / 5) % 2 === 0;
+  const inv = ctx.getTransform ? ctx.getTransform().inverse() : null;
+  SWORD_CAP = {};
   renderPlayer(ps, cx, fy, p.face, flick ? 0.45 : 1);
-}
-function crescent(a0, a1, R, W) {
-  const N = 24;
-  ctx.beginPath();
-  for (let i = 0; i <= N; i++) {
-    const a = a0 + (a1 - a0) * i / N, w = W * Math.pow(i / N, 1.2), r = R + w * 0.35;
-    i ? ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r) : ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+  const cap = SWORD_CAP; SWORD_CAP = null;
+  if (inv && cap.tip) {
+    const T = inv.transformPoint(cap.tip), M = inv.transformPoint(cap.mid);
+    p.tipW = {x: T.x, y: T.y};
+    const u = p.atk > 0 ? 1 - p.atk / ATK_T : -1, tr = p.tipTrail || (p.tipTrail = []);
+    if (u >= ATK_W - 0.02 && u < 0.7 && (!tr.length || tr[tr.length - 1].t !== tick)) tr.push({tx: T.x, ty: T.y, mx: M.x, my: M.y, t: tick});
   }
-  for (let i = N; i >= 0; i--) {
-    const a = a0 + (a1 - a0) * i / N, w = W * Math.pow(i / N, 1.2), r = R - w * 0.65;
-    ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-  }
-  ctx.closePath();
 }
 function drawSlash(p) {
-  if (p.atk <= 0) return;
-  const u = 1 - p.atk / 16; if (u < 0.12 || u > 0.95) return;
-  const cx = p.x + p.w / 2, cy = p.y + p.h * 0.42;
-  const prog = Math.min(1, (u - 0.12) / 0.46), alpha = u < 0.6 ? 1 : Math.max(0, 1 - (u - 0.6) / 0.35);
-  const a0 = -2.2, a1 = a0 + prog * 2.9, R = 70;
-  ctx.save(); ctx.translate(cx, cy); ctx.scale(p.face, 1); ctx.globalCompositeOperation = 'lighter';
-  ctx.globalAlpha = alpha * 0.4; ctx.fillStyle = 'rgba(90,170,255,1)'; crescent(a0, a1, R, 36); ctx.fill();
-  ctx.globalAlpha = alpha * 0.75; ctx.fillStyle = 'rgba(150,220,255,1)'; crescent(a0, a1, R, 21); ctx.fill();
-  ctx.globalAlpha = alpha; ctx.fillStyle = '#ffffff'; crescent(a0, a1, R, 8); ctx.fill();
-  if (prog < 1) { // искра на острие
-    const tx = Math.cos(a1) * (R + 4), ty = Math.sin(a1) * (R + 4);
-    ctx.globalAlpha = alpha * 0.9; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(tx, ty, 5, 0, 7); ctx.fill();
-    ctx.globalAlpha = alpha * 0.5; ctx.drawImage(glowPurple, tx - 18, ty - 18, 36, 36);
+  const tr = p.tipTrail; if (!tr) return;
+  const LIFE = 8;
+  while (tr.length && tick - tr[0].t > LIFE) tr.shift();
+  if (tr.length < 3) return;
+  // сглаживаем след (Catmull-Rom): между кадрами добавляем промежуточные точки, чтобы дуга была плавной, без «углов»
+  const pts = [], SUB = 4, n = tr.length, g = i => tr[Math.max(0, Math.min(n - 1, i))];
+  const cr = (p0, p1, p2, p3, f) => 0.5 * (2 * p1 + (-p0 + p2) * f + (2 * p0 - 5 * p1 + 4 * p2 - p3) * f * f + (-p0 + 3 * p1 - 3 * p2 + p3) * f * f * f);
+  for (let i = 0; i < n - 1; i++) for (let k = 0; k < SUB; k++) {
+    const f = k / SUB, a = g(i - 1), b = g(i), c = g(i + 1), d = g(i + 2);
+    pts.push({tx: cr(a.tx, b.tx, c.tx, d.tx, f), ty: cr(a.ty, b.ty, c.ty, d.ty, f), mx: cr(a.mx, b.mx, c.mx, d.mx, f), my: cr(a.my, b.my, c.my, d.my, f), t: b.t + (c.t - b.t) * f});
   }
+  pts.push(tr[n - 1]);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineJoin = 'round';
+  const layers = [['rgba(90,170,255,1)', 1, 0.38], ['rgba(150,220,255,1)', 0.62, 0.7], ['rgba(255,255,255,1)', 0.16, 0.95]];
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i], ka = Math.max(0, 1 - (tick - a.t) / LIFE), kb = Math.max(0, 1 - (tick - b.t) / LIFE);
+    if (kb <= 0) continue;
+    for (const [col, w, al] of layers) {
+      // лента между остриём и серединой клинка: к хвосту сужается и гаснет
+      const wa = w * ka * ka, wb = w * kb * kb;
+      ctx.globalAlpha = al * kb; ctx.fillStyle = col; ctx.beginPath();
+      ctx.moveTo(a.tx, a.ty); ctx.lineTo(b.tx, b.ty);
+      ctx.lineTo(b.tx + (b.mx - b.tx) * wb, b.ty + (b.my - b.ty) * wb); ctx.lineTo(a.tx + (a.mx - a.tx) * wa, a.ty + (a.my - a.ty) * wa);
+      ctx.closePath(); ctx.fill();
+    }
+  }
+  const e = tr[n - 1];
+  if (tick - e.t < 3) { ctx.globalAlpha = 0.85; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(e.tx, e.ty, 3, 0, 7); ctx.fill(); ctx.globalAlpha = 0.5; ctx.drawImage(glowPurple, e.tx - 16, e.ty - 16, 32, 32); }
   ctx.restore();
 }
 
@@ -2458,7 +2542,7 @@ function drawRewardBeam(it, t) {
 }
 function drawOrb(it, t) {
   const bob = Math.sin(t * 0.05) * 5, x = it.x, y = it.y + bob;
-  const glow = it.type === 'dash' ? glowCyan : it.type === 'dj' ? glowGold : it.type === 'orb' ? glowWarm : glowRed;
+  const glow = it.type === 'sword' ? glowCyan : it.type === 'dash' ? glowCyan : it.type === 'dj' ? glowGold : it.type === 'orb' ? glowWarm : glowRed;
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (0.75 + 0.2 * Math.sin(t * 0.08)) * (it.fade === undefined ? 1 : it.fade);
   ctx.drawImage(glow, x - 64, y - 64, 128, 128);
   for (let i = 0; i < 6; i++) { const a = t * 0.04 + i * 1.047, rr = 30 + Math.sin(t * 0.07 + i) * 4; ctx.globalAlpha = 0.8 * (it.fade === undefined ? 1 : it.fade); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.6, 1.8, 0, 7); ctx.fill(); }
@@ -2468,6 +2552,13 @@ function drawOrb(it, t) {
     ctx.scale(1.5, 1.5); ctx.beginPath(); ctx.moveTo(0, -19); ctx.lineTo(14, -2); ctx.lineTo(0, 19); ctx.lineTo(-14, -2); ctx.closePath();
     const g = ctx.createLinearGradient(-14, -19, 14, 19); g.addColorStop(0, '#ff8a8a'); g.addColorStop(0.5, '#e0182f'); g.addColorStop(1, '#8e0a1f');
     ctx.fillStyle = g; ctx.fill(); ctx.stroke(); ctx.fillStyle = 'rgba(255,235,235,0.6)'; ctx.beginPath(); ctx.moveTo(-3, -13); ctx.lineTo(-10, -3); ctx.lineTo(-5, -2); ctx.closePath(); ctx.fill();
+  } else if (it.type === 'sword') {   // меч, воткнутый в камень: клинок, гарда, рукоять
+    ctx.scale(1.25, 1.25); ctx.rotate(0.12 + Math.sin(t * 0.03) * 0.05); ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(-5, 4); ctx.lineTo(-5, -24); ctx.lineTo(0, -31); ctx.lineTo(5, -24); ctx.lineTo(5, 4); ctx.closePath();
+    ctx.fillStyle = '#d6deee'; ctx.fill(); ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(-2.5, -24, 2, 24);
+    ctx.fillStyle = '#d8b04a'; ctx.beginPath(); ctx.rect(-13, 4, 26, 6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#5a321e'; ctx.beginPath(); ctx.rect(-3.5, 10, 7, 13); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#d8b04a'; ctx.beginPath(); ctx.arc(0, 26, 4.5, 0, 7); ctx.fill(); ctx.stroke();
   } else if (it.type === 'dash') { // голубой кристалл со стрелками
     ctx.rotate(Math.sin(t * 0.03) * 0.15); ctx.beginPath(); ctx.moveTo(0, -24); ctx.lineTo(18, -8); ctx.lineTo(18, 10); ctx.lineTo(0, 24); ctx.lineTo(-18, 10); ctx.lineTo(-18, -8); ctx.closePath();
     const g = ctx.createLinearGradient(-18, -24, 18, 24); g.addColorStop(0, '#d8fbff'); g.addColorStop(0.5, '#4cc0ff'); g.addColorStop(1, '#1e6ed8');
@@ -2507,13 +2598,13 @@ function drawLever(lv, t) {
   if (!lv.on) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35 + 0.2 * Math.sin(t * 0.1); ctx.drawImage(glowRed, lv.x - 34, lv.y - 80, 68, 68); ctx.restore(); }
 }
 function drawBricks(x, y, w, h, base, seed) {
-  const r = rng(seed); ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  const r = rng(seed), ar = rng(seed * 31 + 777); ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
   const pal = ['#3d3860', '#363152', '#44406a', '#2f2b48'];
   for (let row = 0, yy = y; yy < y + h; yy += 17, row++) {
     let xx = x - (row % 2 ? 20 : 0) - r() * 10;
     while (xx < x + w) { const bw = 30 + r() * 24; ctx.fillStyle = base || pal[Math.floor(r() * 4)]; ctx.fillRect(xx, yy, bw, 17);
       ctx.fillStyle = pal[Math.floor(r() * 4)]; ctx.globalAlpha = 0.9; ctx.fillRect(xx, yy, bw, 17); ctx.globalAlpha = 1;
-      ctx.strokeStyle = '#0a0710'; ctx.lineWidth = 2; ctx.strokeRect(xx, yy, bw, 17); xx += bw; }
+      ctx.strokeStyle = '#0a0710'; ctx.lineWidth = 2; ctx.strokeRect(xx, yy, bw, 17); ageBrick(ctx, xx, yy, bw, 17, ar, ageZone(xx, seed % 97), row === 0); xx += bw; }
   }
   ctx.restore();
   ctx.strokeStyle = '#07050c'; ctx.lineWidth = 3; ctx.strokeRect(x, y, w, h);
@@ -2759,23 +2850,9 @@ function drawStoryBack(t, cx) {
   });
   ctx.restore();
 }
-function growMoss() {   // мох пробивается там, где проходил герой
-  if (!P.onGround || room.theme === 'hall' || room.theme === 'tower') return;
-  world.moss = world.moss || {}; const m = world.moss[room.id] = world.moss[room.id] || [], x = P.x + P.w / 2;
-  if (m.length >= 70 || tick % 12 || Math.abs(P.vx) < 0.5) return;
-  if (m.some(q => Math.abs(q.x - x) < 34)) return;
-  m.push({x, y: P.y + P.h, b: tick, r: Math.random()});
-}
 function drawStoryFront(t, cx) {
   const pr = prog(), hx = P.x + P.w / 2;
   ctx.save();
-  if (world.moss && world.moss[room.id]) world.moss[room.id].forEach(q => {   // мох
-    if (q.x < cx - 30 || q.x > cx + VW + 30) return; const g = Math.min(1, (tick - q.b) / 240), n = 5;
-    ctx.fillStyle = '#4c8a3a'; ctx.strokeStyle = '#0c1808'; ctx.lineWidth = 1.5; ctx.lineJoin = 'round';
-    for (let k = 0; k < n; k++) { const bx = q.x + (k - 2) * 4 + q.r * 4, h = (6 + ((k * 7 + q.r * 9) % 6)) * g, sw = Math.sin(t * 0.03 + k + q.x) * 1.2;
-      ctx.beginPath(); ctx.moveTo(bx - 2.2, q.y + 1); ctx.quadraticCurveTo(bx + sw, q.y - h * 0.6, bx + sw + 1, q.y - h); ctx.lineTo(bx + 2.2, q.y + 1); ctx.closePath(); ctx.fill(); ctx.stroke(); }
-    if (g > 0.6) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.18; ctx.drawImage(glowGreen, q.x - 14, q.y - 16, 28, 28); ctx.restore(); }
-  });
   if (WET[room.id]) L.forEach(p => {   // лужи и отражения на мокром камне
     if (!p.g || p.w < 200) return;
     for (let i = 0, n = Math.floor(p.w / 450) + 1; i < n; i++) {
@@ -2959,19 +3036,19 @@ function centerText(txt, y, font, col, alpha, spacing) {
   ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 12; ctx.fillText(txt, VW / 2, y); ctx.restore();
 }
 let hintT = 0;
-const GAME_VER = '0.26 alpha';
+const GAME_VER = '0.27 alpha';
 const VER_BOX = {x: 10, y: 8, w: 150, h: 34}, VER_BOX_MAP = {x: VW - 166, y: VH - 48, w: 150, h: 34};
 const verBox = () => state === 'map' ? VER_BOX_MAP : VER_BOX;
 let aboutOpen = false;
 const CHANGELOG = [
   'Рельеф: холмы, овраги и ступени развалин',
   'Герой сам шагает вверх и вниз по ступеням',
-  'Руины: арки, колонны, стены, хижины, повозки',
+  'Состаренная кладка, меч со следом удара, без мха под ногами',
   'Примерно половина земли неровная, половина ровная',
   'Враги и лампочки подстроены под рельеф',
   'Свечение героя: вспышка от лампочек и угасание',
   'Из 0.25: новые существа с живой анимацией',
-  'Из 0.24: гирлянды, лестницы, меньше лампочек',
+  'Меч теперь надо найти у Врат; бирка — в Зале Лампочек',
 ];
 // ---- сообщения: небольшие, с мягкой полосой и тонкими линиями ----
 function msgBand(y, h, a) {
@@ -3109,7 +3186,7 @@ function drawMap(t) {
     for (const h of (r.hazards || [])) if (h.floor) { const hx0 = MX(g, h.x), hx1 = MX(g, h.x + h.w), hy = MY(g, 400), k = Math.max(2, Math.round((hx1 - hx0) / 4)); ctx.beginPath(); for (let i = 0; i < k; i++) { const a0 = hx0 + (hx1 - hx0) * i / k, a1 = hx0 + (hx1 - hx0) * (i + 1) / k; ctx.moveTo(a0, hy + 1); ctx.lineTo((a0 + a1) / 2, hy - 4); ctx.lineTo(a1, hy + 1); } ctx.fill(); }
     ctx.fillStyle = pal.rock;
     for (const p of r.plats) if (!p.g) { const px0 = MX(g, p.x), px1 = MX(g, p.x + p.w), py = MY(g, p.y); rrect(px0, py, Math.max(4, px1 - px0), 3, 1.5); ctx.fill(); ctx.fillStyle = pal.rim; ctx.globalAlpha = 0.5; ctx.fillRect(px0 + 1, py, Math.max(2, px1 - px0 - 2), 1); ctx.globalAlpha = 1; ctx.fillStyle = pal.rock; }
-    { const lt = (r.lanterns || []).length ? (r.lanterns.filter((_, i) => world.lit[id] && world.lit[id][i]).length / r.lanterns.length) : 0, warm = Math.min(1, lt * 0.45 + prog() * 0.3 + (world.moss && world.moss[id] ? Math.min(0.25, world.moss[id].length / 120) : 0));
+    { const lt = (r.lanterns || []).length ? (r.lanterns.filter((_, i) => world.lit[id] && world.lit[id][i]).length / r.lanterns.length) : 0, warm = Math.min(1, lt * 0.45 + prog() * 0.3);
       if (warm > 0) { const wg = ctx.createLinearGradient(0, g.y + g.h, 0, g.y); wg.addColorStop(0, 'rgba(255,190,110,' + 0.4 * warm + ')'); wg.addColorStop(1, 'rgba(120,200,110,' + 0.16 * warm + ')'); ctx.fillStyle = wg; ctx.fillRect(g.x, g.y, g.w, g.h); } }
     ctx.restore();
     // обод
@@ -3135,7 +3212,7 @@ function drawMap(t) {
   ctx.textAlign = 'left'; ctx.font = '600 20px Georgia, serif'; ctx.fillStyle = '#e8dcc0';
   const L1 = Math.max(338, oy + maxY * CH + 30); ctx.fillText('Способности', 70, L1);
   ctx.font = '17px Georgia, serif';
-  const abil = [['Меч', true, touchMode ? 'кнопка с мечом' : 'X / J'], ['Рывок', world.ab.dash, touchMode ? 'кнопка рывка' : 'Shift'], ['Двойной прыжок', world.ab.dj, 'прыжок в воздухе'], ['Энергошар', world.ab.orb, touchMode ? 'кнопка с шаром' : 'C / L / ПКМ']];
+  const abil = [['Меч', world.ab.sword, touchMode ? 'кнопка с мечом' : 'X / J'], ['Рывок', world.ab.dash, touchMode ? 'кнопка рывка' : 'Shift'], ['Двойной прыжок', world.ab.dj, 'прыжок в воздухе'], ['Энергошар', world.ab.orb, touchMode ? 'кнопка с шаром' : 'C / L / ПКМ']];
   abil.forEach((a, i) => { ctx.fillStyle = a[1] ? '#f3ead0' : '#6a6070'; ctx.fillText((a[1] ? '✦ ' : '✧ ') + (a[1] ? a[0] + '  —  ' + a[2] : '???'), 70, L1 + 30 + i * 26); });
   ctx.font = '600 20px Georgia, serif'; ctx.fillStyle = '#e8dcc0'; ctx.fillText('Исследовано', 520, L1);
   ctx.font = '17px Georgia, serif'; ctx.fillStyle = '#f3ead0';
