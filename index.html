@@ -3815,7 +3815,8 @@ function updateCr(e, p, jd) {
   } else {
     e.chase = !e.calm && e.flash === 0 && Math.abs(dx) < (e.type === 'tick' ? 260 : 210) && p.y + p.h > e.y - 30 && p.y < e.y + e.h + 20 && px > e.min - 30 && px < e.max + 30;
     if (e.type === 'warden') { if (e.atk > 0) e.atk = ++e.atk > 84 ? 0 : e.atk; else if (e.chase && Math.abs(dx) < 140) e.atk = 1; }   // замах 1–38, выпад 38–54, пауза до 84
-    let v = e.atk > 0 ? 0 : e.chase ? c.ch : c.sp; if (e.calm) v *= 0.5;
+    if (e.chase && !e.was) e.alert = 18; e.was = e.chase; if (e.alert > 0) e.alert--; if (e.pause > 0) e.pause--; else if (!e.chase && e.t % 240 === 0 && Math.random() < 0.5) e.pause = 60 + (e.t % 50);
+    let v = e.atk > 0 || e.alert > 0 || e.pause > 0 ? 0 : e.chase ? c.ch : c.sp; if (e.calm) v *= 0.5;
     if (e.type === 'tick') { if (e.trip > 0) { e.trip--; v = 0; } else if (e.chase && e.t % 140 === 0 && Math.random() < 0.6) e.trip = 28; }   // неуклюжий: спотыкается
     if (e.chase) e.f = dx < 0 ? -1 : 1; else e.f = e.dir;
     e.x += (e.chase ? e.f : e.dir) * v;
@@ -3832,73 +3833,220 @@ function updateCr(e, p, jd) {
   } else if (sp && hitR(p, sp)) hurt(e.x + e.w / 2, false);
 }
 function halo(x, y, r, col) { const g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, col); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2); ctx.restore(); }
-function crb(x, y, w, h, col, fl, r) { rrect(x, y, w, h, r === undefined ? 3 : r); ctx.fillStyle = fl ? '#fff' : col; ctx.fill(); ctx.stroke(); }
-function tri(pts, col, fl) { ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.fillStyle = fl ? '#fff' : col; ctx.fill(); ctx.stroke(); }
-function drawCr(e) {
-  const fl = e.flash > 0, dead = e.dead > 0, t = tick, k = dead ? e.dead / 36 : 1, T = e.type, w = Math.sin(e.ph * 1.6) * (e.chase ? 3 : 2), moving = !dead && (e.chase || e.type !== 'moss');
-  ctx.save(); ctx.globalAlpha = Math.min(1, k * 2);
-  if (!e.air) { ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(e.x + e.w / 2, e.y + e.h + 1, e.w * 0.6, 4, 0, 0, 7); ctx.fill(); }
-  ctx.translate(e.x + e.w / 2, e.air ? e.y + e.h / 2 : e.y + e.h); ctx.scale(e.f, 1); if (dead) ctx.rotate(-0.4 * (1 - k));
-  ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.4;
-  if (T === 'guard' || T === 'warden') {
-    const W = T === 'warden', s = W ? 1.5 : 1, ch = e.chase && !dead, at = e.atk;
-    ctx.save(); ctx.scale(s, s);
-    if (W) tri([[-6, -34], [-22, -6], [-2, -4]], fl ? '#fff' : '#8a3a2a', fl);   // плащ
-    const leg = moving ? w : 0; crb(-9, -9 - leg * 0.4, 7, 9, '#7a6a58', fl, 2); crb(2, -9 + leg * 0.4, 7, 9, '#7a6a58', fl, 2);
-    crb(-9, -30, 18, 22, W ? '#bfae8a' : '#cdbfa5', fl);   // торс
-    if (W) { ctx.beginPath(); ctx.arc(0, -19, 6.5, 0, 7); ctx.fillStyle = fl ? '#fff' : CREAM; ctx.fill(); ctx.stroke(); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(0, -19); ctx.lineTo(Math.cos(t * 0.09) * 4.5, -19 + Math.sin(t * 0.09) * 4.5); ctx.moveTo(0, -19); ctx.lineTo(0, -23); ctx.stroke(); ctx.lineWidth = 2.4; }
-    crb(-13, -29 + (ch ? 0 : w * 0.3), 5, 13, '#a99a80', fl, 2);
-    tri([[-9, -30], [9, -30], [1.5, -52 - (W ? 6 : 0)]], W ? '#e2d6bc' : '#ded2b8', fl);   // вытянутая треугольная голова
-    ctx.strokeStyle = 'rgba(60,40,30,0.7)'; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(-3, -37); ctx.lineTo(0, -41); ctx.lineTo(-2, -45); ctx.stroke(); ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.4;   // скол
-    ctx.fillStyle = BRASS; [-5, 0, 5].forEach(x => { ctx.beginPath(); ctx.arc(x, -32, 1.2, 0, 7); ctx.fill(); });   // заклёпки
-    ctx.fillStyle = ch ? '#ff7a2a' : '#ffb347'; ctx.fillRect(-2.5, -41, 5, 5); halo(0, -38.5, 16, 'rgba(255,170,70,0.55)');   // один светящийся глаз
-    if (W) {   // копьё: замах назад, выпад вперёд
-      const ex = at > 38 && at < 54 ? 58 : at > 0 && at <= 38 ? 6 - at * 0.15 : 18; ctx.strokeStyle = '#5a4630'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(ex - 40, -28); ctx.lineTo(ex + 32, -28); ctx.stroke();
-      ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.4; tri([[ex + 30, -34], [ex + 52, -28], [ex + 30, -22]], '#cfd2dc', fl);
-    }
-    ctx.restore();
-  } else if (T === 'knight') {
-    const leg = moving ? w : 0, a = '#8d8a9c', b = '#6c6a7c';
-    crb(-13, -12 - leg * 0.4, 10, 12, b, fl, 2); crb(3, -12 + leg * 0.4, 10, 12, b, fl, 2);
-    crb(-15, -38, 30, 28, a, fl); ctx.strokeStyle = 'rgba(30,28,44,0.6)'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(-15, -24); ctx.lineTo(15, -24); ctx.moveTo(0, -38); ctx.lineTo(0, -24); ctx.stroke(); ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.4;   // пластины
-    tri([[-26, -34], [-12, -42], [-12, -30]], '#a9a6b8', fl); tri([[26, -34], [12, -42], [12, -30]], '#a9a6b8', fl);   // шипы на плечах
-    crb(-11, -60, 22, 22, '#9b98ad', fl); tri([[-5, -60], [5, -60], [0, -74]], '#c4c1d3', fl);   // шлем с шипом
-    ctx.fillStyle = '#ff4a3a'; ctx.fillRect(-7, -52, 14, 3.5); halo(0, -50, 18, 'rgba(255,70,50,0.4)');
-    crb(14, -34, 6, 16, b, fl, 2);
-  } else if (T === 'tick') {
-    const lean = e.trip > 0 ? 0.4 * Math.sin(e.trip * 0.5) : 0, leg = moving && e.trip <= 0 ? w * 1.6 : 0; ctx.rotate(lean);
-    crb(-8, -9 - leg * 0.5, 6, 9, '#7a5a38', fl, 2); crb(2, -9 + leg * 0.5, 6, 9, '#7a5a38', fl, 2); crb(-8, -19, 16, 11, '#a8743c', fl);
-    crb(-11, -33, 22, 18, '#f3c94a', fl, 4); ctx.fillStyle = '#3a2810'; ctx.fillRect(-5, -27, 3, 4); ctx.fillRect(3, -27, 3, 4);
-    ctx.strokeStyle = 'rgba(255,240,170,0.7)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-8, -31); ctx.lineTo(-3, -31); ctx.stroke();
-  } else if (T === 'flyer') {
-    const fl2 = Math.sin(e.ph * 2.2) * 0.45; halo(0, 0, 26, 'rgba(120,190,255,0.45)');
-    ctx.save(); ctx.rotate(-0.5 + fl2); tri([[-3, -2], [-30, -14], [-14, 4]], '#4a7ccc', fl); ctx.restore();   // две асимметричные крылатые пластины
-    ctx.save(); ctx.rotate(0.35 - fl2 * 0.7); tri([[3, -2], [20, -8], [11, 4]], '#3a64b0', fl); ctx.restore();
-    tri([[0, -12], [9, 0], [0, 12], [-9, 0]], '#5a92e0', fl); ctx.fillStyle = '#d6f2ff'; ctx.beginPath(); ctx.arc(0, 0, 3.6, 0, 7); ctx.fill(); halo(0, 0, 14, 'rgba(210,245,255,0.8)');   // светящийся центр
-  } else if (T === 'moss') {
-    const sq = e.mode === 'hop' && e.y < e.gy - 1 ? 1.15 : 1 + Math.sin(e.ph) * 0.05, fly = e.mode === 'fly'; ctx.translate(0, fly ? 0 : -2); ctx.scale(1 / sq, sq);
-    if (fly) { halo(0, -6, 26, 'rgba(255,230,140,0.35)'); ctx.save(); ctx.rotate(Math.sin(e.ph * 3) * 0.5); tri([[-8, -14], [-22, -22], [-14, -8]], '#a4d25a', fl); tri([[8, -14], [22, -22], [14, -8]], '#a4d25a', fl); ctx.restore(); }
-    crb(-8, -3, 6, 5, '#6a8a2c', fl, 2); crb(2, -3, 6, 5, '#6a8a2c', fl, 2);
-    ctx.beginPath(); ctx.arc(0, -13, 13, 0, 7); ctx.fillStyle = fl ? '#fff' : '#79a63a'; ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#9ccb52'; [[-7, -22], [5, -24], [10, -17]].forEach(([x, y]) => { ctx.beginPath(); ctx.ellipse(x, y, 4, 2.4, -0.6, 0, 7); ctx.fill(); });   // листочки
-    ctx.beginPath(); ctx.moveTo(0, -26); ctx.lineTo(-2, -32); ctx.moveTo(0, -26); ctx.lineTo(3, -31); ctx.stroke();
-    ctx.fillStyle = '#23330f'; ctx.beginPath(); ctx.arc(-4, -13, 1.9, 0, 7); ctx.arc(4, -13, 1.9, 0, 7); ctx.fill();
-  }
-  ctx.restore();
+// ---------- рисование существ: костяк из трубчатых конечностей, пластин, обратная кинематика шага ----------
+let FL = false; const fc = c => FL ? '#fff' : c;
+function plate(x, y, w, h, c, d, r) {   // пластина: заливка, толстый контур, тёмная нижняя часть, блик
+  r = r === undefined ? 3 : r; rrect(x, y, w, h, r); ctx.fillStyle = fc(c); ctx.fill(); ctx.stroke();
+  if (!FL) { if (d) { ctx.fillStyle = d; rrect(x + 1.3, y + h * 0.6, w - 2.6, h * 0.4 - 1.3, r * 0.6); ctx.fill(); } ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.fillRect(x + w * 0.16, y + h * 0.12, w * 0.42, 1.3); }
 }
-function drawPinkGummy(e) {   // гумми Склепа: квадратная розовая голова, трещины, внутреннее свечение
-  const fl = e.flash > 0, dead = e.dead > 0, k = dead ? e.dead / 36 : 1, chase = e.chase && !dead, w = Math.sin(e.ph) * (chase ? 4 : 2.5), f = e.f || 1;
-  ctx.save(); ctx.globalAlpha = Math.min(1, k * 2); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(e.x + e.w / 2, e.y + e.h + 1, 20, 4, 0, 0, 7); ctx.fill();
-  ctx.translate(e.x + e.w / 2, e.y + e.h); ctx.scale(f, 1); if (dead) ctx.rotate(-0.5 * (1 - k)); else if (chase) ctx.rotate(0.08);
-  ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.4;
-  crb(-11, -10 - w * 0.4, 8, 10, '#6e6676', fl, 2); crb(3, -10 + w * 0.4, 8, 10, '#6e6676', fl, 2);
-  crb(-10, -28, 20, 19, '#8c8496', fl); crb(-16, -27 - w * 0.3, 6, 13, '#7c748a', fl, 2); crb(10, -27 + w * 0.3, 6, 13, '#7c748a', fl, 2);
-  const g = 0.55 + 0.25 * Math.sin(tick * 0.07 + e.x); halo(0, -42, 30, 'rgba(255,110,190,' + g * 0.55 + ')');
-  crb(-14, -56, 28, 28, '#f07ab4', fl, 4);   // квадратная розовая голова
-  ctx.fillStyle = 'rgba(255,200,230,' + (0.35 + g * 0.4) + ')'; ctx.fillRect(-9, -51, 18, 18);   // внутреннее свечение
-  ctx.strokeStyle = 'rgba(90,20,60,0.75)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-14, -48); ctx.lineTo(-7, -44); ctx.lineTo(-9, -37); ctx.moveTo(14, -34); ctx.lineTo(8, -38); ctx.lineTo(10, -46); ctx.stroke();   // трещины
-  ctx.fillStyle = chase ? '#ff2a4a' : '#7a1030'; ctx.fillRect(-3, -46, 7, 7);
+function poly(pts, c, noStroke) { ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.fillStyle = fc(c); ctx.fill(); if (!noStroke) ctx.stroke(); }
+function limb(p, w0, w1, c) {   // конечность из сужающихся сегментов с круглыми суставами
+  const q = [], n = p.length - 1;
+  for (let i = 0; i < n; i++) {
+    const [x0, y0] = p[i], [x1, y1] = p[i + 1], a = Math.atan2(y1 - y0, x1 - x0) + 1.5708, ca = Math.cos(a), sa = Math.sin(a), ta = w0 + (w1 - w0) * i / n, tb = w0 + (w1 - w0) * (i + 1) / n;
+    q.push(() => { ctx.moveTo(x0 + ca * ta / 2, y0 + sa * ta / 2); ctx.lineTo(x1 + ca * tb / 2, y1 + sa * tb / 2); ctx.lineTo(x1 - ca * tb / 2, y1 - sa * tb / 2); ctx.lineTo(x0 - ca * ta / 2, y0 - sa * ta / 2); ctx.closePath(); });
+    if (i) q.push(() => { ctx.moveTo(x0 + ta / 2, y0); ctx.arc(x0, y0, ta / 2, 0, 7); });
+  }
+  ctx.fillStyle = fc(c); q.forEach(f => { ctx.beginPath(); f(); ctx.fill(); ctx.stroke(); }); q.forEach(f => { ctx.beginPath(); f(); ctx.fill(); });
+}
+function ik(hx, hy, fx, fy, l1, l2, k) {   // двухзвенная конечность: бедро → колено → стопа
+  const d = Math.min(Math.hypot(fx - hx, fy - hy) || 0.01, l1 + l2 - 0.3), a = Math.atan2(fy - hy, fx - hx), c = Math.acos(Math.max(-1, Math.min(1, (l1 * l1 + d * d - l2 * l2) / (2 * l1 * d)))) * k;
+  return [[hx, hy], [hx + Math.cos(a + c) * l1, hy + Math.sin(a + c) * l1], [hx + Math.cos(a) * d, hy + Math.sin(a) * d]];
+}
+function stepLeg(hx, hy, ph, str, lift, wk, l1, l2, w0, w1, c, boot, bd) {   // шаг: стопа идёт по дуге, при остановке встаёт ровно
+  const p = ik(hx, hy, hx + Math.sin(ph) * str * wk, -Math.max(0, Math.cos(ph)) * lift * wk, l1, l2, 1); limb(p, w0, w1, c);
+  plate(p[2][0] - 3.5, p[2][1] - 4, 12, 5.5, boot, bd, 2.2); return p;
+}
+function arm(sx, sy, a1, a2, l1, l2, w0, w1, c) {   // руки: углы от вертикали вниз, плюс — вперёд
+  const ex = sx + Math.sin(a1) * l1, ey = sy + Math.cos(a1) * l1, hx = ex + Math.sin(a1 + a2) * l2, hy = ey + Math.cos(a1 + a2) * l2; limb([[sx, sy], [ex, ey], [hx, hy]], w0, w1, c); return [hx, hy, a1 + a2];
+}
+function ball(x, y, r, c) { ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fillStyle = fc(c); ctx.fill(); ctx.stroke(); }
+function crPre(e, S, air) {
+  const dead = e.dead > 0, k = dead ? e.dead / 36 : 1, hit = Math.max(0, e.flash) / 8, al = e.alert > 0 ? e.alert / 18 : 0; FL = e.flash > 0;
+  const mv = e.lx === undefined ? 0 : Math.abs(e.x - e.lx); e.lx = e.x; e.spd = (e.spd || 0) + (mv - (e.spd || 0)) * 0.2; e.gp = (e.gp || 0) + (dead ? 0 : mv) * 0.14;
+  const wk = Math.min(1, e.spd / 0.5), look = e.pause > 0 ? Math.sin(e.pause * 0.11) : 0;
+  ctx.save(); ctx.globalAlpha = Math.min(1, k * 2.2);
+  if (!air) { ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(e.x + e.w / 2, e.y + e.h + 1, 18 * S + 6, 4, 0, 0, 7); ctx.fill(); }
+  ctx.translate(e.x + e.w / 2, air ? e.y + e.h / 2 : e.y + e.h);
+  ctx.scale(e.f * S * (1 + hit * 0.08), S * (1 - hit * 0.08 - (dead ? (1 - k) * 0.35 : 0))); ctx.rotate((e.chase && !dead ? 0.09 * wk : 0) - hit * 0.2 - al * 0.12 - (dead ? (1 - k) * 1.25 : 0));
+  ctx.lineJoin = ctx.lineCap = 'round'; ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.6;
+  return {wk, t: tick, gp: e.gp, ph: e.ph, al, look, ch: e.chase && !dead, dead, hit};
+}
+function drawCr(e) {
+  const T = e.type, S = {guard: 0.95, knight: 0.8, warden: 0.85, tick: 0.9, flyer: 1, moss: 1}[T], s = crPre(e, S, e.air);
+  ({guard: drawGuard, knight: drawKnight, warden: drawWarden, tick: drawTickMob, flyer: drawFlyer, moss: drawMoss})[T](e, s); ctx.restore(); FL = false;
+}
+function eyeGlow(x, y, rx, ry, col, blink) { ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(x, y, rx, ry * blink, 0, 0, 7); ctx.fill(); halo(x, y, rx * 5, 'rgba(255,170,70,0.5)'); }
+function drawGuard(e, s) {   // Треугольный страж: белая накидка, бронзовый ворот, молоток, вытянутая голова-конус с одним глазом
+  const W = e.weak, {wk, t, gp, al, look, ch} = s, bob = Math.abs(Math.sin(gp)) * 2.2 * wk + Math.sin(t * 0.05) * 0.4, hy = -15 + bob * 0.5, cl = W ? '#d8c8a2' : '#efe3cb', cd = W ? '#a89468' : '#c9b594', bt = '#5a3c26';
+  const sw = Math.sin(gp) * 0.8 * wk, raise = ch ? -2.1 + Math.sin(t * 0.35) * 0.25 : 0;
+  stepLeg(-4, hy, gp + Math.PI, 8, 6, wk, 7, 7, 5, 4, '#7a6a58', bt, '#3a2418');
+  arm(-4, -32 + bob, -sw * 0.8, 0.3, 8, 8, 4.5, 3.6, cd);   // дальняя рука
+  poly([[-8, -35 + bob], [8, -35 + bob], [11, -11 + bob * 0.4], [-11, -11 + bob * 0.4]], cl);   // накидка
+  poly([[-11, -11 + bob * 0.4], [11, -11 + bob * 0.4], [11, -14 + bob * 0.4], [-11, -14 + bob * 0.4]], '#d9822f');   // оранжевая кайма
+  if (!FL) { ctx.fillStyle = cd; ctx.fillRect(3, -33 + bob, 6, 18); ctx.fillStyle = 'rgba(120,80,40,0.6)'; ctx.fillRect(-5, -26 + bob, 1.4, 9); ctx.fillRect(1, -22 + bob, 1.4, 7); }
+  plate(-9.5, -25 + bob * 0.8, 19, 3.6, bt, null, 1.5); plate(-2, -26 + bob * 0.8, 5, 5.4, '#c9a24a', '#8a6a2a', 1.5);   // ремень с пряжкой
+  stepLeg(4, hy, gp, 8, 6, wk, 7, 7, 5.5, 4, '#8a7a66', bt, '#3a2418');
+  // голова-конус
+  const hx = look * 2.5 + (ch ? 2 : 0) - al * 2, apx = 2 + hx + Math.sin(t * 0.05) * 0.8 + wk * 2, apy = (W ? -57 : -63) + bob * 0.6 - al * 3, by = -35 + bob;
+  const cone = [[-11, by], [11, by], [apx, apy]];
+  poly(cone, cl); if (!FL) { poly([[3, by], [11, by], [apx, apy]], cd, true); ctx.beginPath(); cone.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.stroke();
+    ctx.strokeStyle = 'rgba(90,60,40,0.75)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(-6, by - 6); ctx.lineTo(-2.5, by - 10); ctx.lineTo(-4.5, by - 15); ctx.moveTo(6, by - 20); ctx.lineTo(4, by - 24); ctx.stroke();   // сколы
+    if (W) { ctx.beginPath(); ctx.moveTo(apx - 1, apy); ctx.lineTo(apx + 3, apy + 7); ctx.stroke(); } ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.6; }
+  ctx.fillStyle = FL ? '#fff' : '#2a1220'; ctx.beginPath(); ctx.ellipse(hx * 0.4 - 1, by - 9, 5, 6.5, 0, 0, 7); ctx.fill(); ctx.stroke();   // тёмное лицо-проём
+  const bl = (Math.floor(t + e.x) % 230) < 8 ? 0.15 : 1; eyeGlow(hx * 0.4 + 0.6, by - 9, 2 + al * 1.4 + (ch ? 0.8 : 0), 2.8 + al, ch ? '#ff7a30' : '#ffc050', bl);
+  if (!W) { plate(-12, by - 1.5, 24, 4.6, '#c9a24a', '#8a6a2a', 2); ctx.fillStyle = '#5a3a14'; [-7, 0, 7].forEach(x => { ctx.beginPath(); ctx.arc(x, by + 0.8, 1, 0, 7); ctx.fill(); }); }   // бронзовый ворот с заклёпками
+  else poly([[-11, by - 1], [-5, by + 3], [0, by - 1], [5, by + 4], [11, by - 1]], '#a8864a');
+  // ближняя рука с молотком
+  const a1 = ch ? raise : sw * 0.9, h = arm(5, -32 + bob, a1, ch ? -0.5 : 0.4, 8, 8, 5, 4, cl), ang = h[2] + (ch ? Math.sin(t * 0.35) * 0.4 : 0.2), tx = h[0] + Math.sin(ang) * 15, ty = h[1] + Math.cos(ang) * 15;
+  limb([[h[0] - Math.sin(ang) * 4, h[1] - Math.cos(ang) * 4], [tx, ty]], 2.6, 2.6, '#6a4a2a'); ctx.save(); ctx.translate(tx, ty); ctx.rotate(-ang); plate(-5, -2, 10, 7, '#8c8a98', '#5c5a6c', 2); ctx.restore(); ball(h[0], h[1], 2.8, '#7a4a2a');
+}
+function drawKnight(e, s) {   // Серый шипастый рыцарь: пластинчатая броня, шипы на плечах, шлем-череп с шипом, копьё
+  const {wk, t, gp, look, ch, al} = s, bob = Math.abs(Math.sin(gp)) * 2 * wk + Math.sin(t * 0.04) * 0.4, hy = -27 + bob * 0.5, A = '#9a97aa', Ad = '#6a6880', B = '#4a4658', sw = Math.sin(gp) * 0.55 * wk;
+  const sa = ch ? 1.15 : -0.08 + Math.sin(gp) * 0.05 * wk, hx0 = 17, hy0 = -30 + bob;   // копьё в дальней руке
+  ctx.save(); ctx.translate(hx0, hy0); ctx.rotate(sa); limb([[0, 40], [0, -78]], 3.2, 3.2, '#6a4a2a'); poly([[-6, -76], [6, -76], [0, -98]], '#cfd2dc'); plate(-4.5, -78, 9, 3, '#c9a24a', null, 1); plate(-3.4, 34, 6.8, 8, '#8c8a98', null, 2); ctx.restore();
+  ball(hx0 - 1, hy0, 4, '#4a4658');
+  stepLeg(-7, hy, gp + Math.PI, 7, 5, wk, 12, 12, 9, 7, Ad, B, '#2a2638'); ball(-7 + Math.sin(gp + Math.PI) * 7 * wk, hy + 11, 4.2, A);
+  const sk = Math.sin(gp) * 2 * wk;
+  poly([[-13, -56 + bob], [13, -56 + bob], [10, -30 + bob * 0.5], [-10, -30 + bob * 0.5]], A);   // нагрудник
+  if (!FL) { ctx.fillStyle = Ad; ctx.fillRect(3, -54 + bob, 8, 22); ctx.strokeStyle = 'rgba(30,28,44,0.7)'; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(0, -55 + bob); ctx.lineTo(0, -32 + bob); ctx.moveTo(-11, -44 + bob); ctx.lineTo(11, -44 + bob); ctx.stroke(); ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.6; ctx.fillStyle = '#c9a24a'; [[-6, -50], [6, -50], [-6, -38], [6, -38]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y + bob, 1.2, 0, 7); ctx.fill(); }); }
+  [-9, -2, 5].forEach((x, i) => poly([[x, -32 + bob * 0.5], [x + 8, -32 + bob * 0.5], [x + 7 + sk * (i - 1) * 0.5, -21 + bob * 0.4], [x + 1 + sk * (i - 1) * 0.5, -21 + bob * 0.4]], i % 2 ? Al2 : A));   // набедренные пластины качаются
+  plate(-13, -34 + bob * 0.6, 26, 4.6, '#b8903c', '#7a5a24', 2);
+  stepLeg(7, hy, gp, 7, 5, wk, 12, 12, 10, 8, A, B, '#2a2638'); ball(7 + Math.sin(gp) * 7 * wk, hy + 11, 4.6, '#b9b6c8');
+  const ar = arm(-13, -53 + bob, -sw, 0.5, 9, 9, 6, 5, A); ball(ar[0], ar[1], 4, B);   // ближняя рука
+  [[-15, 1], [15, 1]].forEach(([x, sg]) => { ball(x, -54 + bob, 7.4, '#a9a6b8'); poly([[x - 3.5, -59 + bob], [x + 3.5, -59 + bob], [x + sg * 7, -71 + bob]], '#cfd2dc'); });   // плечи с шипами
+  // шлем-череп
+  const hx = look * 2 + (ch ? 2 : 0) - al * 2, hyy = -60 + bob * 0.6 - al * 2, spk = Math.sin(t * 0.05) * 1.2 + wk * 3 + hx;
+  poly([[-4, hyy - 18], [4, hyy - 18], [spk + 1, hyy - 44]], '#cfd2dc');
+  plate(-12 + hx * 0.4, hyy - 20, 24, 21, '#9b98ad', '#6e6b84', 6);
+  ctx.fillStyle = FL ? '#fff' : '#1a1624'; [-5.4, 5.4].forEach(x => { ctx.beginPath(); ctx.ellipse(x + hx * 0.7, hyy - 9, 3.7, 4.4, 0, 0, 7); ctx.fill(); ctx.stroke(); });   // пустые глазницы
+  const bl = (Math.floor(t + e.x) % 260) < 8 ? 0.2 : 1; if (!FL) { ctx.fillStyle = ch ? '#ff4a3a' : '#e0502a'; [-5.4, 5.4].forEach(x => { ctx.beginPath(); ctx.arc(x + hx * 0.9, hyy - 8.4, 1.5 * bl + al, 0, 7); ctx.fill(); }); halo(hx, hyy - 9, 22, 'rgba(255,80,50,' + (ch ? 0.5 : 0.28) + ')'); }
+  poly([[-1.6 + hx * 0.7, hyy - 4], [1.6 + hx * 0.7, hyy - 4], [hx * 0.7, hyy - 8]], '#1a1624');
+  plate(-8 + hx * 0.4, hyy + 0.5, 16, 5, '#8a87a0', '#5c5a72', 2); if (!FL) { ctx.strokeStyle = C_OUT; ctx.lineWidth = 1.2; ctx.beginPath(); [-4, 0, 4].forEach(x => { ctx.moveTo(x + hx * 0.4, hyy + 1.5); ctx.lineTo(x + hx * 0.4, hyy + 5); }); ctx.stroke(); ctx.lineWidth = 2.6; }
+}
+const Al2 = '#b9b6c8';
+function drawWarden(e, s) {   // Страж Времени: рваный плащ, часы на груди, конус-шлем с визором, большое копьё
+  const {wk, t, gp, ch} = s, atk = e.atk, wi = atk > 0 && atk <= 38 ? atk / 38 : 0, th = atk > 38 && atk < 54 ? (atk - 38) / 16 : 0, rc = atk >= 54 ? 1 - (atk - 54) / 30 : 0;
+  const ez = th ? 1 - (1 - th) * (1 - th) : 0, lunge = th ? 12 * ez : rc * 12 - wi * 5, bob = Math.abs(Math.sin(gp)) * 2 * wk + Math.sin(t * 0.04) * 0.5, hy = -26 + bob * 0.5, G = '#8a8798', Gd = '#5c5a6c', BR = '#c8963e', BRd = '#7a5324';
+  ctx.translate(lunge, 0);
+  // плащ
+  const back = -9 - wk * 9 - wi * 4 + th * 8, pts = [[-6, -66 + bob], [8, -66 + bob]]; for (let i = 0; i <= 5; i++) pts.push([8 + back * (1 - i / 5) * 0.2 + (i < 5 ? 0 : 0) - (5 - i) * (-back / 5 * 0.0), -66 + bob + 0]);
+  ctx.beginPath(); ctx.moveTo(-5, -66 + bob); ctx.lineTo(7, -66 + bob);
+  for (let i = 0; i <= 6; i++) { const u = i / 6, x = 10 + back * 0.4 - u * (24 - back * 0.6 + 14), wv = Math.sin(t * 0.07 + i * 1.3 + gp) * 2.4; ctx.lineTo(x + (i % 2 ? 2.5 : -1) + 0, -4 + bob * 0.2 - (i % 2 ? 6 : 0) + wv * 0.6); }
+  ctx.lineTo(-9, -60 + bob); ctx.closePath(); ctx.fillStyle = fc('#7a2f26'); ctx.fill(); ctx.stroke();
+  if (!FL) { ctx.strokeStyle = 'rgba(40,10,14,0.5)'; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(-3, -60 + bob); ctx.lineTo(-18 + back * 0.4, -12); ctx.moveTo(-6, -58 + bob); ctx.lineTo(-30 + back, -10); ctx.stroke(); ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.6; }
+  stepLeg(-6, hy, gp + Math.PI, 7, 5, wk, 12, 12, 9, 7, Gd, '#3a3446', '#1e1a28');
+  // копьё
+  const L = (a, b, u) => a + (b - a) * u, id = [16, 0, 8 + Math.sin(t * 0.03) * 1.5, -106], rd = [-26, -30, 50, -40], tp = [-14, -35, 96, -35];
+  let P0 = id; if (wi) { const u = wi * wi * (3 - 2 * wi); P0 = id.map((v, i) => L(v, rd[i], u)); } else if (th) P0 = rd.map((v, i) => L(v, tp[i], ez)); else if (rc) P0 = tp.map((v, i) => L(id[i], v, rc));
+  const dx = P0[2] - P0[0], dy = P0[3] - P0[1], dl = Math.hypot(dx, dy), ux = dx / dl, uy = dy / dl, nx = -uy, ny = ux;
+  limb([[P0[0] - ux * 14, P0[1] - uy * 14], [P0[0] + dx, P0[1] + dy]], 3.4, 3.4, '#6a4a2a');
+  poly([[P0[2] + ux * 20, P0[3] + uy * 20], [P0[2] + nx * 6.5 + ux * 4, P0[3] + ny * 6.5 + uy * 4], [P0[2] - ux * 2, P0[3] - uy * 2], [P0[2] - nx * 6.5 + ux * 4, P0[3] - ny * 6.5 + uy * 4]], '#d4d6e0');   // листовидный наконечник
+  poly([[P0[0] - ux * 14, P0[1] - uy * 14], [P0[0] - ux * 22 + nx * 2.4, P0[1] - uy * 22 + ny * 2.4], [P0[0] - ux * 22 - nx * 2.4, P0[1] - uy * 22 - ny * 2.4]], '#cfd2dc'); ball(P0[2], P0[3], 2.6, BR);
+  const gx = P0[0] + dx * 0.42, gy = P0[1] + dy * 0.42;
+  let ah = ik(-6, -58 + bob, P0[0] + dx * 0.62, P0[1] + dy * 0.62, 13, 13, -1); limb(ah, 5.5, 4.6, Gd); ball(ah[2][0], ah[2][1], 3.6, '#4a4658');   // дальняя рука
+  // торс с часами
+  poly([[-12, -66 + bob], [13, -66 + bob], [10, -30 + bob * 0.5], [-10, -30 + bob * 0.5]], G);
+  if (!FL) { ctx.fillStyle = Gd; ctx.fillRect(4, -64 + bob, 8, 32); }
+  const cy = -46 + bob * 0.8; ball(0, cy, 12.5, BR); ctx.beginPath(); ctx.arc(0, cy, 9.6, 0, 7); ctx.fillStyle = fc('#f0dca8'); ctx.fill(); ctx.stroke();
+  if (!FL) { ctx.strokeStyle = '#4a2810'; ctx.lineWidth = 1.2; for (let i = 0; i < 12; i++) { const a = i / 12 * 6.283; ctx.beginPath(); ctx.moveTo(Math.cos(a) * 7.4, cy + Math.sin(a) * 7.4); ctx.lineTo(Math.cos(a) * 8.8, cy + Math.sin(a) * 8.8); ctx.stroke(); }
+    const ma = t * 0.09, ha = t * 0.0075; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(Math.cos(ma) * 7, cy + Math.sin(ma) * 7); ctx.stroke(); ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(Math.cos(ha) * 4.5, cy + Math.sin(ha) * 4.5); ctx.stroke(); ctx.fillStyle = BRd; [0, 1, 2, 3, 4, 5, 6, 7].forEach(i => { const a = i / 8 * 6.283; ctx.beginPath(); ctx.arc(Math.cos(a) * 12.5, cy + Math.sin(a) * 12.5, 1, 0, 7); ctx.fill(); }); ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.6; }
+  plate(-12, -32 + bob * 0.5, 24, 4.4, BR, BRd, 2);
+  stepLeg(6, hy, gp, 7, 5, wk, 12, 12, 10, 8, G, '#3a3446', '#1e1a28'); ball(6 + Math.sin(gp) * 7 * wk, hy + 11, 4.4, BR);
+  let an = ik(8, -60 + bob, gx, gy, 13, 13, 1); limb(an, 6, 5, G); ball(an[2][0], an[2][1], 4, '#5a3a24');   // ближняя рука
+  ball(-13, -64 + bob, 6.4, BR); ball(13, -64 + bob, 6.4, BR); ctx.fillStyle = BRd; [[-13, -64], [13, -64]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y + bob, 1.4, 0, 7); ctx.fill(); });   // бронзовые наплечники
+  // шлем-конус с визором
+  const hh = Math.sin(t * 0.05) * 0.8 + wk * 2.5 + (ch ? 2 : 0) - wi * 3 + th * 4, apx = 2 + hh, apy = -113 + bob * 0.6, by = -69 + bob;
+  poly([[-11, by], [11, by], [apx, apy]], '#a09eae'); if (!FL) { poly([[2, by], [11, by], [apx, apy]], '#6e6c80', true); ctx.beginPath(); ctx.moveTo(-11, by); ctx.lineTo(11, by); ctx.lineTo(apx, apy); ctx.closePath(); ctx.stroke(); }
+  plate(-12, by - 18, 24, 18, '#9a98aa', '#68667c', 3); ctx.fillStyle = FL ? '#fff' : '#1a1220'; ctx.fillRect(-8, by - 11, 16, 3.6); ctx.strokeRect(-8, by - 11, 16, 3.6);   // визор
+  if (!FL) { halo(0, by - 9, 20, 'rgba(255,170,60,' + (ch || atk ? 0.55 : 0.32) + ')'); ctx.fillStyle = ch || atk ? '#ff7a30' : '#ffc050'; ctx.fillRect(-6, by - 10.3, 4, 1.8); ctx.fillRect(2, by - 10.3, 4, 1.8); }
+  plate(-13, by - 1, 26, 5, BR, BRd, 2); plate(-1.6, by - 22, 3.2, 8, BR, null, 1);
+}
+function drawTickMob(e, s) {   // Жёлтый Тик: кубическая голова с лицом, коричневая туника, медная труба; быстрый, неуклюжий
+  const {wk, t, gp, ph, look, ch, al} = s, trip = e.trip > 0, tt = trip ? e.trip / 28 : 0, idle = !ch && wk < 0.2, toot = idle && (e.t % 280) < 40, bob = Math.abs(Math.sin(gp)) * 3 * wk;
+  ctx.rotate(trip ? 0.45 * Math.sin(tt * 3.1) : 0); const hy = -13 + bob * 0.4, sw = Math.sin(gp) * 1.15 * wk;
+  stepLeg(-4, hy, gp + Math.PI, 10, 8, Math.max(wk, ch ? 1 : 0) * (trip ? 0.3 : 1), 6.5, 6.5, 4.6, 3.6, '#8a5a32', '#5a3a1e', '#2a1a0c');
+  arm(-3, -28 + bob, trip ? -2.4 + Math.sin(t * 0.5) * 0.5 : -sw, 0.5, 7, 7, 4, 3.4, '#c88a48');
+  plate(-8, -29 + bob, 16, 17, '#b0793e', '#7a4f24', 3); plate(-8, -20 + bob * 0.8, 16, 3.2, '#4a2e18', null, 1.4); plate(-1.8, -20.4 + bob * 0.8, 4, 4, '#c9a24a', null, 1);   // туника, ремень, пряжка
+  if (!FL) { ctx.strokeStyle = '#e8c070'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-7, -27 + bob); ctx.lineTo(7, -15 + bob); ctx.stroke(); ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.6; }   // лямка
+  stepLeg(4, hy, gp, 10, 8, Math.max(wk, ch ? 1 : 0) * (trip ? 0.3 : 1), 6.5, 6.5, 5, 4, '#9a6a3a', '#5a3a1e', '#2a1a0c');
+  // труба
+  const up = toot || (ch && !trip) ? -1.9 + Math.sin(t * 0.3) * 0.1 : trip ? -2.8 : sw * 0.9, hnd = arm(5, -28 + bob, up, toot ? -0.9 : 0.3, 7, 7, 4.2, 3.6, '#d89a52'), ta = -0.15 + (toot ? -0.7 : 0);
+  limb([[hnd[0] - 3, hnd[1]], [hnd[0] + Math.cos(ta) * 13, hnd[1] + Math.sin(ta) * 13]], 2.6, 4, '#c8963e'); ball(hnd[0] + Math.cos(ta) * 15, hnd[1] + Math.sin(ta) * 15, 4.4, '#e6b95a'); ball(hnd[0], hnd[1], 2.6, '#d89a52');
+  if (toot && e.t % 7 === 0) puff(e.x + e.w / 2 + 20 * e.f, e.y - 6, 1, 'rgba(255,220,120,1)', 1.2, true);
+  // голова-куб
+  const tilt = (toot ? -0.14 : 0) + look * 0.08 + Math.sin(gp) * 0.05 * wk - al * 0.1; ctx.save(); ctx.translate(0, -28 + bob); ctx.rotate(tilt);
+  plate(-13, -26, 26, 25, '#f3c94a', '#d9a62a', 4); if (!FL) { ctx.fillStyle = '#d9a62a'; ctx.fillRect(8.5, -24, 3.5, 22); ctx.fillStyle = 'rgba(190,130,20,0.55)'; [[-9, -21], [2, -23], [-7, -7], [5, -5]].forEach(([x, y]) => ctx.fillRect(x, y, 4, 2.2)); ctx.strokeStyle = 'rgba(150,95,10,0.55)'; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(-11, -6); ctx.lineTo(-11, -12); ctx.moveTo(10, -23); ctx.lineTo(7, -20); ctx.stroke(); ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.6; }
+  const lx = look * 1.6 + (ch ? 1.5 : 0), bl = (Math.floor(t + e.x) % 200) < 7 ? 0.2 : 1; ctx.fillStyle = FL ? '#fff' : '#3a2210';
+  [-6, 3].forEach(x => { ctx.beginPath(); ctx.ellipse(x + lx + 2, -15, 1.9, (al ? 3.6 : 2.7) * bl, 0, 0, 7); ctx.fill(); });
+  if (!FL) { ctx.strokeStyle = '#3a2210'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(-8 + lx, -20 + (ch ? 1.5 : 0)); ctx.lineTo(-3 + lx, -19); ctx.moveTo(8 + lx, -20 + (ch ? 1.5 : 0)); ctx.lineTo(3 + lx, -19); ctx.stroke(); ctx.beginPath(); if (ch || trip) { ctx.ellipse(lx + 2, -7, 2.6, 2.2, 0, 0, 7); ctx.fillStyle = '#5a1e10'; ctx.fill(); } else { ctx.moveTo(-2 + lx, -8); ctx.quadraticCurveTo(lx + 2, -5.5, 5 + lx, -8); ctx.stroke(); } ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.6; }
   ctx.restore();
+  if (trip) { ctx.fillStyle = '#ffe070'; for (let i = 0; i < 3; i++) { const a = t * 0.2 + i * 2.1; ctx.save(); ctx.translate(Math.cos(a) * 13, -62 + Math.sin(a) * 3); ctx.rotate(a); ctx.fillRect(-3, -0.8, 6, 1.6); ctx.fillRect(-0.8, -3, 1.6, 6); ctx.restore(); } }
+}
+function drawFlyer(e, s) {   // Летун: синий кристальный корпус, два длинных клинка-крыла разной длины, светящееся ядро, осколки вокруг
+  const {t, ph, ch} = s, fl = Math.sin(ph * 2.2) * 0.6, bob = Math.sin(ph) * 2;
+  ctx.translate(0, bob); ctx.rotate((ch ? 0.3 : 0) + Math.sin(ph * 0.7) * 0.06);
+  for (let i = 0; i < 3; i++) { const a = t * 0.04 + i * 2.1, r = 26 + Math.sin(a * 2) * 4; ctx.save(); ctx.translate(Math.cos(a) * r, Math.sin(a) * r * 0.6 - 2); ctx.rotate(a * 2); poly([[0, -3.4], [2.4, 2], [-2.4, 2]], '#7ab4f0'); ctx.restore(); }   // вращающиеся осколки
+  const wing = (sg, len, wd, c, c2, base) => {
+    const a = base + sg * fl * 0.6, ex = Math.cos(a) * len, ey = Math.sin(a) * len, mx = Math.cos(a - sg * 0.35) * len * 0.5, my = Math.sin(a - sg * 0.35) * len * 0.5;
+    limb([[0, -3], [mx, -3 + my], [ex, -3 + ey]], wd, 2, c);
+    for (let i = 1; i < 4; i++) { const u = i / 4, px = mx * Math.min(1, u * 2) + (ex - mx) * Math.max(0, u * 2 - 1), py = my * Math.min(1, u * 2) + (ey - my) * Math.max(0, u * 2 - 1); poly([[px, -3 + py], [px + Math.cos(a + 1.5) * 6 * (sg > 0 ? -1 : 1), -3 + py + Math.sin(a + 1.5) * 6 * (sg > 0 ? -1 : 1)], [px + Math.cos(a) * 6, -3 + py + Math.sin(a) * 6]], c2); }
+    poly([[ex + Math.cos(a) * 9, -3 + ey + Math.sin(a) * 9], [ex + Math.cos(a + 1.57) * 2.6, -3 + ey + Math.sin(a + 1.57) * 2.6], [ex - Math.cos(a + 1.57) * 2.6, -3 + ey - Math.sin(a + 1.57) * 2.6]], '#cfeaff');
+  };
+  wing(-1, 31, 6, '#3f6fc4', '#5f9ae6', -2.15); wing(1, 37, 6.4, '#4a7ccc', '#7ab4f0', -1.0);   // дальнее короче, ближнее длиннее
+  const tl = Math.sin(ph * 1.5) * 3; limb([[0, 10], [tl, 18], [-tl * 0.6, 25]], 5, 1.5, '#3a64b0');
+  poly([[0, -16], [10, -2], [6, 11], [0, 17], [-6, 11], [-10, -2]], '#4f86d8'); if (!FL) { poly([[0, -16], [10, -2], [6, 11], [0, 17]], '#3f6fc4', true); poly([[0, -16], [-10, -2], [-6, 11], [0, 17]], '#6aa2ea', true); ctx.beginPath(); ctx.moveTo(0, -16); ctx.lineTo(10, -2); ctx.lineTo(6, 11); ctx.lineTo(0, 17); ctx.lineTo(-6, 11); ctx.lineTo(-10, -2); ctx.closePath(); ctx.stroke(); }
+  poly([[8, -4], [17, 0.5], [8, 4]], '#d8c080'); ball(0, -1, 4.4, '#cfeaff'); ball(1, -1, 2.2, ch ? '#fff2b0' : '#ffffff'); halo(0, -1, 18, ch ? 'rgba(255,230,160,0.8)' : 'rgba(170,225,255,0.7)');
+}
+function drawMoss(e, s) {   // Мох: круглый пушистый обитатель с листиками, глазками и лапками-листьями (стоит / прыгает / парит)
+  const {t, ph} = s, hop = e.mode === 'hop', fly = e.mode === 'fly', air = hop && e.y < e.gy - 1, ph2 = e.t % 100, cr = hop && ph2 >= 80 ? (ph2 - 80) / 20 : 0, land = hop && !air && ph2 < 10 ? 1 - ph2 / 10 : 0;
+  let sx = 1 + Math.sin(ph) * 0.03, sy = 1 - Math.sin(ph) * 0.03; if (cr) { sx = 1 + 0.2 * cr; sy = 1 - 0.24 * cr; } else if (air) { sx = 0.9; sy = 1.14; } else if (land) { sx = 1 + 0.2 * land; sy = 1 - 0.2 * land; }
+  const wob = fly ? Math.sin(ph) * 0.12 : 0; ctx.translate(0, fly ? 14 : -1); ctx.rotate(wob); ctx.scale(sx, sy);
+  const fl2 = fly ? Math.sin(ph * 4) * 0.7 : air ? 0.7 : Math.sin(ph) * 0.15;
+  [-1, 1].forEach(sg => { ctx.save(); ctx.translate(sg * 11, -15); ctx.rotate(sg * (0.4 + fl2)); poly([[0, 0], [sg * 12, -4], [sg * 17, 1], [sg * 12, 6]], fly ? '#b6dc6a' : '#6f9a34'); if (!FL) { ctx.strokeStyle = 'rgba(40,70,10,0.55)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, 1); ctx.lineTo(sg * 14, 1); ctx.stroke(); ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.6; } ctx.restore(); });
+  if (!fly) [-1, 1].forEach(sg => { const lift = air ? -3 : 0; poly([[sg * 3, -4 + lift], [sg * 12, -3 + lift], [sg * 10, 1 + lift], [sg * 2, 1 + lift]], '#c4783a'); });   // лапки-листики
+  if (fly) poly([[-4, -2], [4, -2], [0, 6]], '#c4783a');
+  ctx.beginPath(); ctx.arc(0, -15, 14, 0, 7); const g = ctx.createRadialGradient(-5, -22, 2, 0, -15, 16); g.addColorStop(0, '#b0d85e'); g.addColorStop(0.55, '#79a63a'); g.addColorStop(1, '#4e7824'); ctx.fillStyle = FL ? '#fff' : g; ctx.fill(); ctx.stroke();
+  if (!FL) { ctx.fillStyle = 'rgba(40,80,20,0.4)'; [[-8, -9, 2.6], [8, -10, 2.2], [3, -4, 2], [-3, -24, 1.8], [10, -19, 1.6]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); }); ctx.fillStyle = 'rgba(210,245,130,0.55)'; ctx.beginPath(); ctx.ellipse(-6, -23, 4, 2, -0.5, 0, 7); ctx.fill(); }
+  const lw = Math.sin(ph * 1.3) * 3.5; [[-1, '#8fc44a'], [1, '#a4d25a']].forEach(([sg, c]) => { ctx.save(); ctx.translate(sg * 2, -28); ctx.rotate(sg * (0.55 + lw * 0.05)); poly([[0, 0], [sg * 3, -7], [sg * 9, -9], [sg * 8, -2]], c); ctx.restore(); });   // верхние листики
+  const look = Math.abs(e.f) * 0, bl = (Math.floor(t + e.x * 3) % 210) < 8 ? 0.15 : 1, lx = 1.2; ctx.fillStyle = FL ? '#fff' : '#1c2a0c';
+  [-5, 5].forEach(x => { ctx.beginPath(); ctx.ellipse(x + lx, -14, 2.3, 3.2 * bl, 0, 0, 7); ctx.fill(); }); if (!FL) { ctx.fillStyle = '#fff'; [-5, 5].forEach(x => { ctx.beginPath(); ctx.arc(x + lx + 0.8, -15.4, 0.8, 0, 7); ctx.fill(); }); ctx.fillStyle = 'rgba(255,140,110,0.5)'; [-9, 9].forEach(x => { ctx.beginPath(); ctx.ellipse(x + lx, -9, 2.4, 1.4, 0, 0, 7); ctx.fill(); }); ctx.strokeStyle = '#1c2a0c'; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(-2 + lx, -8.5); ctx.quadraticCurveTo(lx, -6.5, 2 + lx, -8.5); ctx.stroke(); ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.6; }
+  if (fly) halo(0, -15, 28, 'rgba(255,230,140,0.3)');
+}
+function drawPinkGummy(e) {   // Гумми Склепа: розовая трещиноватая куб-голова, внутреннее свечение, серо-лиловое тельце, ушки-шипы; желейно покачивается
+  const s = crPre(e, 1, false), {wk, t, gp, look, ch, al} = s, bob = Math.abs(Math.sin(gp)) * 3.4 * wk + Math.sin(t * 0.06) * 0.5, hy = -13 + bob * 0.4, gl = 0.55 + 0.25 * Math.sin(t * 0.07 + e.x), wob = Math.sin(t * 0.12 + e.x) * 0.045 + Math.sin(gp * 2) * 0.05 * wk;
+  stepLeg(-4, hy, gp + Math.PI, 7, 5, wk, 6.5, 6.5, 4, 3.2, '#8c84a0', '#a89cb8', '#5c5470'); 
+  arm(-5, -29 + bob, ch ? 1.5 : -Math.sin(gp - 0.9) * 0.9 * wk + Math.sin(t * 0.05) * 0.1, ch ? 0.2 : 0.3, 7, 7, 3.6, 3, '#7c748a');   // руки болтаются с запаздыванием
+  plate(-7.5, -30 + bob, 15, 17, '#8c8496', '#625a72', 3); ball(0, -22 + bob, 3.3, '#ff5aa0'); if (!FL) halo(0, -22 + bob, 12, 'rgba(255,90,160,' + gl * 0.7 + ')');
+  stepLeg(4, hy, gp, 7, 5, wk, 6.5, 6.5, 4.4, 3.4, '#9a92ae', '#b4a8c4', '#5c5470');
+  arm(5, -29 + bob, ch ? 1.8 : Math.sin(gp - 0.9) * 0.9 * wk + Math.sin(t * 0.05 + 2) * 0.1, ch ? 0.1 : 0.3, 7, 7, 3.8, 3, '#8c84a0');
+  ctx.save(); ctx.translate(look * 1.5 - al * 2, -30 + bob); ctx.scale(1 + wob, 1 - wob); ctx.rotate(Math.sin(gp) * 0.06 * wk - al * 0.1);
+  const ear = ch ? 0.55 : Math.sin(t * 0.08) * 0.08; [-1, 1].forEach(sg => { ctx.save(); ctx.translate(sg * 13, -17); ctx.rotate(sg * ear * -1); poly([[0, -5], [sg * 17, -14 + (ch ? 8 : 0)], [0, 5]], '#9a92ac'); poly([[0, -2], [sg * 11, -9 + (ch ? 5 : 0)], [0, 2]], '#d870a8', true); ctx.restore(); });   // ушки-шипы
+  if (!FL) halo(0, -14, 34, 'rgba(255,110,190,' + gl * 0.5 + ')');
+  plate(-14, -29, 28, 27, '#f07ab4', '#c24c8c', 4);
+  if (!FL) { ctx.fillStyle = 'rgba(255,205,232,' + (0.3 + gl * 0.4) + ')'; ctx.fillRect(-9.5, -24, 19, 17); ctx.fillStyle = '#c24c8c'; ctx.fillRect(10, -27, 3.4, 24); ctx.strokeStyle = 'rgba(255,225,245,' + (0.5 + gl * 0.4) + ')'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(-14, -20); ctx.lineTo(-8, -15); ctx.lineTo(-10, -8); ctx.moveTo(14, -9); ctx.lineTo(8, -13); ctx.lineTo(10, -21); ctx.moveTo(-3, -29); ctx.lineTo(-1, -24); ctx.stroke(); ctx.strokeStyle = 'rgba(90,20,60,0.7)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-13, -19); ctx.lineTo(-7.5, -14); ctx.stroke(); ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.6; }
+  plate(-7 + look, -22, 14, 12, '#3a2234', null, 2.4); ctx.fillStyle = FL ? '#fff' : ch ? '#ff2a4a' : '#d81c3c'; ctx.fillRect(-3 + look * 1.2, -19.5, 7, 7); if (!FL) halo(look, -16, 16, 'rgba(255,40,80,' + (ch ? 0.7 : 0.4) + ')');   // квадратный красный глаз
+  ctx.restore(); ctx.restore(); FL = false;
+}
+function drawClockMinion(e) {   // Часы-паук: латунный шар-циферблат, фонарик на макушке, восемь тонких лап с когтями и шагом
+  const t = tick, k = e.dead > 0 ? e.dead / 24 : 1, sc = k * (e.elite ? 1.35 : 1), ph = e.ph; FL = e.flash > 0;
+  ctx.save(); ctx.translate(e.x + e.w / 2, e.y + e.h / 2 + Math.sin(ph * 0.8) * 1.2); ctx.scale(sc, sc); ctx.globalAlpha = Math.min(1, k * 1.6);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= 0.3 + 0.1 * Math.sin(t * 0.1); ctx.drawImage(glowWarm, -38, -38, 76, 76); ctx.restore();
+  ctx.lineJoin = ctx.lineCap = 'round'; ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.2;
+  const chase = e.chase && e.dead <= 0;
+  for (let pass = 0; pass < 2; pass++) for (const sg of [-1, 1]) for (let i = 0; i < 4; i++) {
+    if ((sg > 0) !== (pass === 1)) continue;
+    const u = i - 1.5, w = ph * (chase ? 2.6 : 1.7) + i * 1.5 + (sg > 0 ? 2 : 0), fx = sg * (30 + Math.abs(u) * 3 + (i === 1 || i === 2 ? 3 : 0)) + Math.cos(w) * 3.4 + u * -sg * 2, fy = 27 + u * 3 - Math.max(0, Math.sin(w)) * 7;
+    const p = ik(sg * 9, -3 + u * 3.6, fx, fy, 20, 18, -sg); limb(p, 4.6, 1.4, pass ? '#c8963e' : '#8a6a30'); ball(p[1][0], p[1][1], 2.1, '#7a5324');
+  }
+  ctx.save(); ctx.rotate(ph * 0.5); ctx.fillStyle = fc('#7a5324'); for (let i = 0; i < 6; i++) { ctx.save(); ctx.rotate(i / 6 * 6.283); ctx.fillRect(-1.5, 12, 3, 5); ctx.restore(); } ctx.restore(); ball(0, 13, 4, '#a8742c');   // шестерёнка снизу
+  ball(0, 0, 15.5, '#c8963e'); if (!FL) { ctx.fillStyle = 'rgba(255,226,150,0.4)'; ctx.beginPath(); ctx.ellipse(-6, -9, 5, 2.4, -0.6, 0, 7); ctx.fill(); ctx.fillStyle = '#7a5324'; for (let i = 0; i < 8; i++) { const a = i / 8 * 6.283 + 0.4; ctx.beginPath(); ctx.arc(Math.cos(a) * 13.4, Math.sin(a) * 13.4, 0.9, 0, 7); ctx.fill(); } }
+  ctx.beginPath(); ctx.arc(0, 0, 10.8, 0, 7); ctx.fillStyle = fc('#f0dca8'); ctx.fill(); ctx.lineWidth = 1.6; ctx.stroke();
+  if (!FL) { ctx.strokeStyle = '#4a2810'; ctx.lineWidth = 1.4; for (let i = 0; i < 12; i += 3) { const a = i / 12 * 6.283; ctx.beginPath(); ctx.moveTo(Math.cos(a) * 8, Math.sin(a) * 8); ctx.lineTo(Math.cos(a) * 10, Math.sin(a) * 10); ctx.stroke(); }
+    const ma = t * 0.09 + ph, ha = t * 0.0075; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(ma) * 8.5, Math.sin(ma) * 8.5); ctx.stroke(); ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(ha) * 5.5, Math.sin(ha) * 5.5); ctx.stroke(); ctx.fillStyle = '#4a2810'; ctx.beginPath(); ctx.arc(0, 0, 1.6, 0, 7); ctx.fill(); }
+  ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.2; plate(-4.2, -22, 8.4, 6, '#a8742c', null, 2);   // основание фонарика
+  const fk = 0.75 + 0.25 * Math.sin(t * 0.2 + ph); plate(-3.4, -29, 6.8, 8, FL ? '#fff' : (chase ? '#ff9a40' : '#ffb85a'), null, 2.4); if (!FL) halo(0, -25, 14, 'rgba(255,170,70,' + fk * 0.7 + ')'); ball(0, -31, 2, '#a8742c');
+  ctx.restore(); FL = false;
 }
 function makeGearDecor(rm) {
   if (rm.theme !== 'tower') return [];
@@ -3998,26 +4146,6 @@ function updateClockMinion(e, p, jd) {
     else hurt(e.x + e.w / 2, false);
   }
 }
-function drawClockMinion(e) {
-  const t = tick, cx = e.x + e.w / 2, cy = e.y + e.h / 2, k = e.dead > 0 ? e.dead / 24 : 1, fl = e.flash > 0, sw = Math.sin(e.ph * 2);
-  ctx.save(); ctx.translate(cx, cy); ctx.scale(k * (e.elite ? 1.35 : 1), k * (e.elite ? 1.35 : 1)); ctx.globalAlpha = Math.min(1, k * 1.6);
-  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= 0.35 + 0.1 * Math.sin(t * 0.1); ctx.drawImage(glowWarm, -34, -34, 68, 68); ctx.restore();
-  ctx.lineJoin = 'round'; ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.4;
-  ctx.fillStyle = fl ? '#fff' : BRASS_D;
-  ctx.strokeStyle = fl ? '#fff' : BRASS_D; ctx.lineWidth = 2.2; ctx.lineCap = 'round';                                                    // тонкие механические лапы
-  for (const s of [-1, 1]) for (let i = 0; i < 4; i++) { const w = Math.sin(e.ph * 2 + i * 1.6 + (s > 0 ? 1.5 : 0)) * 3, y0 = (i - 1.5) * 4; ctx.beginPath(); ctx.moveTo(s * 8, y0); ctx.lineTo(s * (20 + Math.abs(i - 1.5) * 3), y0 * 1.7 - 9 + w); ctx.lineTo(s * (25 + i * 1.5), 12 + (i - 1.5) * 3 + w * 0.6); ctx.stroke(); }
-  ctx.strokeStyle = C_OUT; ctx.lineWidth = 2.4;
-  ctx.beginPath(); ctx.arc(0, -17, 4.2, 0, 7); ctx.fillStyle = fl ? '#fff' : BRASS; ctx.fill(); ctx.stroke();                         // кольцо-макушка
-  ctx.beginPath(); ctx.arc(0, 0, 15, 0, 7); ctx.fillStyle = fl ? '#fff' : BRASS; ctx.fill(); ctx.stroke();                            // корпус
-  ctx.beginPath(); ctx.arc(0, 0, 10.8, 0, 7); ctx.fillStyle = fl ? '#fff' : CREAM; ctx.fill(); ctx.lineWidth = 1.6; ctx.stroke();
-  ctx.strokeStyle = '#4a2810'; ctx.lineWidth = 1.4; for (let i = 0; i < 12; i += 3) { const a = i / 12 * 6.283; ctx.beginPath(); ctx.moveTo(Math.cos(a) * 8, Math.sin(a) * 8); ctx.lineTo(Math.cos(a) * 10, Math.sin(a) * 10); ctx.stroke(); }
-  const ma = t * 0.09 + e.ph, ha = t * 0.0075;
-  ctx.lineCap = 'round'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(ma) * 8.5, Math.sin(ma) * 8.5); ctx.stroke();
-  ctx.lineWidth = 2.6; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(ha) * 5.5, Math.sin(ha) * 5.5); ctx.stroke();
-  ctx.fillStyle = '#4a2810'; ctx.beginPath(); ctx.arc(0, 0, 1.6, 0, 7); ctx.fill();
-  ctx.restore();
-}
-
 // ---------- шестерни, циферблат, фон башни ----------
 function drawGear(x, y, R, teeth, rot, fill, edge, spokes) {
   ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.beginPath();
