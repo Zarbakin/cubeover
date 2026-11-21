@@ -682,6 +682,107 @@ const TOTAL_SHARDS = 6, SHARDS_PER_HEART = 3;   // 3 осколка в Эмбе�
     (r.hazards = r.hazards || []).push({x: gx, y: 400, w: gw, floor: true});
   });
 })();
+// ====================== v26: рельеф и руины ======================
+// Профиль земли — узлы [x, y]. Между ними строятся ступени-обломки: шаг не выше 18 px, герой поднимается по ним сам (STAIR).
+const STAIR = 22;
+function terrain(id, x0, x1, kn) {
+  const R = ROOMS[id], i = R.plats.findIndex(p => p.g && p.x <= x0 && p.x + p.w >= x1); if (i < 0) { console.warn('terrain: нет земли', id, x0, x1); return; }
+  const b = R.plats[i], out = [];
+  if (x0 > b.x) out.push({x: b.x, y: b.y, w: x0 - b.x, g: 1});
+  for (let k = 0; k < kn.length - 1; k++) {
+    const [xa, ya] = kn[k], [xb, yb] = kn[k + 1], len = xb - xa; if (len <= 0) continue;
+    if (ya === yb) { out.push({x: xa, y: ya, w: len, g: 1}); continue; }
+    const n = Math.max(2, Math.min(Math.ceil(Math.abs(yb - ya) / 18), Math.floor(len / 22)));
+    for (let s = 0; s < n; s++) { const xs = Math.round(xa + len * s / n), xe = Math.round(xa + len * (s + 1) / n); out.push({x: xs, y: Math.round(ya + (yb - ya) * (s + 0.5) / n), w: xe - xs, g: 1}); }
+  }
+  if (x1 < b.x + b.w) out.push({x: x1, y: b.y, w: b.x + b.w - x1, g: 1});
+  out.forEach(p => { p.dp = Math.max(170, 575 - p.y); });
+  R.plats.splice(i, 1, ...out); R.uneven = (R.uneven || 0) + (x1 - x0);
+}
+const TER = {
+  gate:   [[100, 340, [[100, 400], [150, 364], [220, 364], [250, 330], [280, 330], [310, 365], [340, 400]]], [740, 880, [[740, 400], [800, 366], [850, 366], [880, 400]]], [1030, 1175, [[1030, 400], [1062, 436], [1148, 436], [1175, 400]]], [1380, 1650, [[1380, 400], [1440, 400], [1496, 436], [1584, 436], [1650, 400]]]],
+  chains: [[120, 490, [[120, 400], [170, 400], [240, 364], [320, 364], [350, 340], [380, 340], [440, 370], [490, 400]]], [880, 1050, [[880, 400], [960, 364], [1050, 364]]], [1860, 2090, [[1860, 400], [1930, 356], [2020, 356], [2090, 400]]], [2480, 2690, [[2480, 400], [2540, 440], [2630, 440], [2690, 400]]], [1540, 1690, [[1540, 400], [1590, 364], [1640, 364], [1690, 400]]]],
+  crypt:  [[140, 290, [[140, 400], [190, 364], [240, 364], [290, 400]]], [470, 740, [[470, 400], [540, 360], [640, 360], [700, 386], [740, 400]]], [920, 1090, [[920, 400], [960, 436], [1060, 436], [1090, 400]]], [1360, 1540, [[1360, 400], [1400, 440], [1500, 440], [1540, 400]]]],
+  bridge: [[100, 480, [[100, 400], [180, 364], [300, 364], [340, 330], [400, 330], [440, 365], [480, 400]]], [900, 1240, [[900, 400], [960, 400], [1020, 364], [1090, 364], [1120, 330], [1160, 330], [1200, 365], [1240, 400]]], [1560, 1690, [[1560, 400], [1610, 364], [1650, 364], [1690, 400]]], [1850, 1990, [[1850, 400], [1900, 364], [1960, 364], [1990, 400]]], [2160, 2380, [[2160, 400], [2230, 364], [2300, 364], [2380, 400]]], [2560, 2690, [[2560, 400], [2620, 370], [2690, 400]]], [3030, 3230, [[3030, 400], [3090, 364], [3170, 364], [3230, 400]]]],
+  hall:   [[640, 810, [[640, 400], [690, 364], [760, 364], [810, 400]]], [200, 560, [[200, 400], [260, 364], [340, 364], [380, 330], [460, 330], [500, 364], [560, 400]]], [820, 1240, [[820, 400], [880, 436], [1000, 436], [1060, 400], [1110, 364], [1180, 364], [1240, 400]]], [1300, 1620, [[1300, 400], [1360, 364], [1420, 364], [1470, 330], [1540, 330], [1580, 364], [1620, 400]]], [1850, 2130, [[1850, 400], [1910, 436], [2040, 436], [2130, 400]]]],
+  spires: [[140, 540, [[140, 400], [190, 364], [250, 364], [290, 330], [350, 330], [390, 364], [450, 364], [540, 400]]], [1110, 1290, [[1110, 400], [1160, 364], [1230, 364], [1290, 400]]], [2080, 2240, [[2080, 400], [2130, 364], [2190, 364], [2240, 400]]], [2440, 2690, [[2440, 400], [2490, 436], [2610, 436], [2690, 400]]]],
+  ante:   [[140, 460, [[140, 400], [200, 364], [260, 364], [300, 330], [380, 330], [420, 364], [460, 400]]], [980, 1190, [[980, 400], [1040, 364], [1130, 364], [1190, 400]]], [1280, 1500, [[1280, 400], [1340, 436], [1440, 436], [1500, 400]]]],
+  tw_entry: [[680, 890, [[680, 400], [740, 364], [820, 364], [890, 400]]], [1300, 1700, [[1300, 400], [1360, 364], [1430, 364], [1490, 330], [1550, 330], [1610, 364], [1650, 364], [1700, 400]]]],
+  tw_npc: [[700, 1050, [[700, 400], [760, 364], [850, 364], [900, 330], [950, 330], [1000, 364], [1050, 400]]]],
+  tw_gates: [[380, 760, [[380, 400], [440, 364], [520, 364], [560, 330], [640, 330], [680, 364], [740, 364], [760, 400]]], [820, 1050, [[820, 400], [880, 436], [980, 436], [1050, 400]]]]
+};
+Object.keys(TER).forEach(id => TER[id].forEach(([a, b, k]) => terrain(id, a, b, k)));
+// лампочки на земле ложатся на рельеф
+Object.keys(ROOMS).forEach(id => { const R = ROOMS[id]; (R.bulbs || []).forEach(b => { if (b[1] === 372) { const g = topAt(R, b[0]); if (g !== null) b[1] = g - 28; } }); });
+// руины: декор без коллизий, стоит на земле (y считается по рельефу)
+const RUINS = {
+  gate:   [['arch', 230, 1.15], ['column', 470, 1, 80], ['rubble', 640], ['post', 830], ['wall', 1090, 1, 0, 95], ['crate', 1340], ['cart', 1532], ['rubble', 1620]],
+  chains: [['column', 90, 1, 96], ['wall', 190, 1, 0, 80], ['rubble', 330], ['crate', 410], ['post', 930], ['hut', 1010, 0.9], ['column', 1590, 1, 70], ['wall', 1650, 1, 0, 70], ['rubble', 1975], ['cart', 2330], ['cog', 2400, 1.1], ['post', 2560], ['crate', 2610], ['wall', 2730, 1, 0, 90]],
+  crypt:  [['arch', 220, 1.1], ['cog', 590, 1], ['rubble', 800], ['wall', 1000, 1, 0, 90], ['column', 1200, 1, 90], ['crate', 1290], ['rubble', 1440], ['post', 1640], ['column', 1730, 1, 60]],
+  bridge: [['column', 100, 1, 110], ['cart', 240], ['wall', 400, 1, 0, 85], ['rubble', 520], ['post', 905], ['hut', 1062, 0.85], ['column', 1210, 1, 70], ['rubble', 1930], ['crate', 2200], ['cog', 2290, 1], ['post', 2420], ['wall', 2600, 1, 0, 70], ['rubble', 3050], ['arch', 3230, 1.1], ['column', 3360, 1, 80]],
+  hall:   [['arch', 120, 1.2], ['column', 310, 1, 70], ['rubble', 430], ['post', 640], ['hut', 700, 0.9], ['wall', 930, 1, 0, 90], ['column', 1140, 1, 85], ['crate', 1260], ['arch', 1500, 1.1], ['post', 1790], ['rubble', 1950], ['wall', 2160, 1, 0, 80], ['column', 2330, 1, 100]],
+  spires: [['column', 110, 1, 90], ['wall', 210, 1, 0, 85], ['cog', 290, 1.2], ['rubble', 420], ['post', 560], ['crate', 1195], ['column', 1480, 1, 80], ['hut', 1980, 0.85], ['rubble', 2160], ['cart', 2560], ['column', 2650, 1, 60]],
+  ante:   [['column', 160, 1, 90], ['wall', 250, 1, 0, 80], ['cog', 340, 1], ['post', 720], ['rubble', 1060], ['crate', 1100], ['wall', 1300, 1, 0, 70], ['cart', 1380], ['column', 1520, 1, 90]],
+  arena:  [['column', 90, 1, 130], ['wall', 220, 1, 0, 100], ['column', 1300, 1, 130], ['rubble', 1220]],
+  shaft:  [['column', 80, 1, 100], ['wall', 150, 1, 0, 70], ['crate', 1100], ['rubble', 1210]],
+  tw_entry: [['column', 80, 1, 100], ['cart', 200], ['cog', 700, 1.2], ['rubble', 780], ['post', 1000], ['wall', 1220, 1, 0, 80], ['hut', 1400, 0.9], ['crate', 1740]],
+  tw_gates: [['column', 100, 1, 100], ['crate', 220], ['cog', 450, 1.1], ['rubble', 600], ['post', 900], ['wall', 1180, 1, 0, 80]],
+  tw_npc: [['crate', 120], ['cog', 330, 1], ['column', 700, 1, 90], ['crate', 960]],
+  tw_arena: [['column', 60, 1, 120], ['column', 1450, 1, 120]],
+  tw_boss: [['column', 80, 1, 140], ['column', 2020, 1, 140]]
+};
+Object.keys(RUINS).forEach(id => { const R = ROOMS[id]; R.ruins = RUINS[id].map(([k, x, s, h, w]) => ({k, x, s: s || 1, h: h || 80, w: w || 90, y: topAt(R, x) !== null ? topAt(R, x) : 400})); });
+function drawRuins(t, cx) {
+  for (const o of (room.ruins || [])) {
+    if (o.x + 170 < cx || o.x - 170 > cx + VW) continue;
+    const r = rng(Math.floor(o.x) + 7), s = o.s, ST = '#3d3860', SD = '#2a2644', SL = '#524d7e', WD = '#5a4030', WDD = '#3a281c', BR = '#8a6a2a', OL = '#0a0710';
+    const R = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); ctx.strokeRect(x, y, w, h); };
+    const P = (pts, c) => { ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.fillStyle = c; ctx.fill(); ctx.stroke(); };
+    ctx.save(); ctx.translate(o.x, o.y + 3); ctx.scale(s, s); ctx.lineJoin = 'round'; ctx.strokeStyle = OL; ctx.lineWidth = 2.2 / s;
+    if (o.k === 'column') {
+      const h = o.h; R(-20, -12, 40, 12, SD); R(-16, -h, 32, h - 12, ST); ctx.fillStyle = SL; ctx.fillRect(-14, -h + 2, 6, h - 16);
+      ctx.strokeStyle = 'rgba(10,7,16,0.5)'; ctx.lineWidth = 1.2; [-2, 6].forEach(x => { ctx.beginPath(); ctx.moveTo(x, -h + 8); ctx.lineTo(x, -14); ctx.stroke(); }); ctx.strokeStyle = OL; ctx.lineWidth = 2.2 / s;
+      P([[-16, -h], [-9, -h - 9], [-3, -h - 2], [4, -h - 13], [10, -h - 4], [16, -h]], ST);
+      P([[24, -10], [48, -10], [46, 0], [22, 0]], ST); P([[26, -10], [44, -10], [42, -17], [28, -17]], SL);
+    } else if (o.k === 'arch') {
+      [-44, 44].forEach((x, i) => { R(x - 13, -14, 26, 14, SD); R(x - 10, -(i ? 92 : 112), 20, i ? 78 : 98, ST); }); R(-57, -126, 26, 14, SL);
+      ctx.beginPath(); ctx.arc(0, -112, 44, Math.PI, Math.PI * 1.62); ctx.arc(0, -112, 30, Math.PI * 1.62, Math.PI, true); ctx.closePath(); ctx.fillStyle = ST; ctx.fill(); ctx.stroke();
+      P([[34, -92], [48, -98], [44, -80]], ST); P([[56, -8], [80, -8], [74, 0], [52, 0]], ST);
+    } else if (o.k === 'wall') {
+      const w = o.w, n = Math.ceil(w / 15); for (let i = 0; i < n; i++) { const h = 24 + r() * 34 + (i % 4 === 0 ? 10 : 0); R(i * 15 - w / 2, -h, 15, h, i % 2 ? ST : '#443f6a'); }
+      ctx.strokeStyle = 'rgba(10,7,16,0.55)'; ctx.lineWidth = 1.2; for (let y = 12; y < 50; y += 14) { ctx.beginPath(); ctx.moveTo(-w / 2, -y); ctx.lineTo(w / 2, -y); ctx.stroke(); } ctx.strokeStyle = OL; ctx.lineWidth = 2.2 / s;
+      P([[w / 2 + 6, 0], [w / 2 + 24, -9], [w / 2 + 34, 0]], ST);
+    } else if (o.k === 'rubble') {
+      for (let i = 0; i < 6; i++) { const x = (r() - 0.5) * 70, y = -r() * 12, w = 10 + r() * 16, h = 8 + r() * 10; P([[x - w / 2, y], [x - w * 0.3, y - h], [x + w * 0.4, y - h * 0.8], [x + w / 2, y]], i % 2 ? ST : SD); }
+    } else if (o.k === 'crate') {
+      const box = (x, y, w, h) => { R(x, y, w, h, WD); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y + h); ctx.moveTo(x + w, y); ctx.lineTo(x, y + h); ctx.stroke(); R(x, y, w, 4, WDD); };
+      box(-30, -26, 26, 26); box(-4, -22, 22, 22); box(-22, -50, 22, 24);
+      ctx.beginPath(); ctx.ellipse(36, -10, 12, 14, 0, 0, 7); ctx.fillStyle = WDD; ctx.fill(); ctx.stroke(); ctx.strokeStyle = BR; ctx.beginPath(); ctx.moveTo(24, -14); ctx.lineTo(48, -14); ctx.moveTo(24, -6); ctx.lineTo(48, -6); ctx.stroke(); ctx.strokeStyle = OL;
+    } else if (o.k === 'cart') {
+      ctx.save(); ctx.rotate(-0.12); P([[-40, -28], [26, -28], [20, -8], [-34, -8]], WD); R(-40, -34, 66, 6, WDD); [-24, -6, 12].forEach(x => { ctx.beginPath(); ctx.moveTo(x, -28); ctx.lineTo(x, -8); ctx.stroke(); });
+      ctx.beginPath(); ctx.moveTo(26, -22); ctx.lineTo(60, -14); ctx.lineWidth = 4; ctx.stroke(); ctx.lineWidth = 2.2 / s; ctx.restore();
+      ctx.beginPath(); ctx.arc(-6, -14, 15, 0, 7); ctx.fillStyle = WDD; ctx.fill(); ctx.stroke(); ctx.strokeStyle = BR; ctx.lineWidth = 2; for (let i = 0; i < 4; i++) { const a = i * 0.79 + 0.3; ctx.beginPath(); ctx.moveTo(-6 - Math.cos(a) * 13, -14 - Math.sin(a) * 13); ctx.lineTo(-6 + Math.cos(a) * 13, -14 + Math.sin(a) * 13); ctx.stroke(); } ctx.strokeStyle = OL; ctx.lineWidth = 2.2 / s;
+      ctx.beginPath(); ctx.arc(30, -2, 9, 0, 7); ctx.fillStyle = WDD; ctx.fill(); ctx.stroke();
+    } else if (o.k === 'post') {
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(-4, -50, 12, -86); ctx.lineWidth = 6; ctx.stroke(); ctx.strokeStyle = '#4a4458'; ctx.lineWidth = 3; ctx.stroke(); ctx.strokeStyle = OL; ctx.lineWidth = 2.2 / s;
+      R(-6, -8, 12, 8, SD); P([[6, -92], [20, -92], [22, -78], [4, -78]], '#5a5468'); R(8, -86, 10, 8, '#3a2a18');
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.22 + 0.1 * Math.sin(t * 0.07 + o.x); ctx.drawImage(glowWarm, -22, -118, 70, 70); ctx.restore();
+    } else if (o.k === 'hut') {
+      R(-56, -92, 112, 92, '#2a2238'); R(-56, -92, 112, 6, SD);
+      ctx.strokeStyle = 'rgba(10,7,16,0.6)'; ctx.lineWidth = 1.4; for (let x = -48; x < 56; x += 16) { ctx.beginPath(); ctx.moveTo(x, -86); ctx.lineTo(x, 0); ctx.stroke(); } ctx.strokeStyle = OL; ctx.lineWidth = 2.2 / s;
+      R(-60, -96, 8, 96, WD); R(52, -96, 8, 60, WD); ctx.beginPath(); ctx.moveTo(-60, -60); ctx.lineTo(-20, -96); ctx.moveTo(60, -50); ctx.lineTo(30, -96); ctx.stroke();
+      P([[-66, -92], [-10, -134], [24, -112], [8, -104], [26, -92]], '#4a3a52');   // крыша с провалом
+      R(-36, -66, 26, 24, '#120c1a'); ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.18 + 0.08 * Math.sin(t * 0.05 + o.x); ctx.fillStyle = '#ffb060'; ctx.fillRect(-34, -64, 22, 20); ctx.restore();
+      R(14, -50, 24, 50, '#0e0814'); P([[40, -6], [62, -6], [56, 0], [38, 0]], ST);
+    } else if (o.k === 'cog') {
+      const rr = 38; ctx.save(); ctx.beginPath(); ctx.rect(-80, -90, 160, 93); ctx.clip(); ctx.translate(0, -8); ctx.rotate(0.35);
+      for (let i = 0; i < 12; i++) { ctx.save(); ctx.rotate(i / 12 * 6.283); R(-6, -rr - 9, 12, 14, '#7a5a2a'); ctx.restore(); }
+      ctx.beginPath(); ctx.arc(0, 0, rr, 0, 7); ctx.fillStyle = '#8a6a2a'; ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, rr * 0.6, 0, 7); ctx.fillStyle = '#4a3a1a'; ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, rr * 0.2, 0, 7); ctx.fillStyle = '#c8963e'; ctx.fill(); ctx.stroke(); ctx.restore();
+      P([[-50, 0], [-36, -12], [-22, 0]], ST); P([[30, 0], [46, -9], [60, 0]], SD);
+    }
+    ctx.restore();
+  }
+}
 function shardsInfo() { const n = world.shards || 0; return {n, part: n % SHARDS_PER_HEART}; }
 
 // ====================== Предрендер: небо ======================
@@ -754,7 +855,7 @@ const vignette = (() => {
 // ====================== Предрендер: платформы ======================
 function buildPlatform(p, seed, theme) {
   const r = rng(seed), pad = 34, top = 44, w = p.w;
-  const depth = p.g ? 170 : 70 + Math.floor(r() * 30);
+  const depth = p.g ? (p.dp || 170) : 70 + Math.floor(r() * 30);
   const W = w + pad * 2, H = top + depth + (p.g ? 10 : 100);
   const c = mk(W, H), g = c.getContext('2d');
   const pts = [[pad, top], [pad + w, top]];
@@ -834,7 +935,8 @@ function stepFlip() {
   const d = flipTo - flipS, st = Math.max(0.055, Math.abs(d) * 0.14);
   flipS = Math.abs(d) <= st ? flipTo : flipS + Math.sign(d) * st;
 }
-let heroFlash = 0, HG = 0;
+let heroFlash = 0, HG = 0, glowT = 0;
+function lightUp(n) { glowT = Math.min(3200, Math.max(0, glowT) + 420 + 150 * n); heroFlash = Math.max(heroFlash, 14); }   // лампочки зажигают героя на время
 const embers = [];
 { const r = rng(9); for (let i = 0; i < 70; i++) embers.push({x: r() * (VW + 40), y: r() * VH, r: 1 + r() * 2.2, vy: -(0.15 + r() * 0.35), ph: r() * 6, front: i % 3 === 0}); }
 
@@ -935,7 +1037,7 @@ function startGame(cont) {
   world = sv ? Object.assign(newWorld(), sv.w) : newWorld();
   if (sv && sv.w.shards === undefined) { world.shards = Object.keys(world.items || {}).filter(k => /^s\d+$/.test(k)).length; world.maxHp = 5 + Math.floor(world.shards / SHARDS_PER_HEART); }
   if ((world.shards || 0) > TOTAL_SHARDS) world.shards = TOTAL_SHARDS;   // старые сохранения (было 9 осколков)
-  coinsGot = world.bulbs || 0; hp = world.maxHp; swingId = 0; trans = null; popup = null; toast = null;
+  coinsGot = world.bulbs || 0; glowT = 0; hp = world.maxHp; swingId = 0; trans = null; popup = null; toast = null;
   en = ORB_MAX; orbT = 0;
   if (sv) {
     const c = world.cp, r = ROOMS[c.room];
@@ -1223,7 +1325,7 @@ function swordHit() {
     e.swing = p.swing; e.hp--; e.flash = 8; e.kb = p.face * 7; freeze = 4; shake = Math.max(shake, 5); sfx.clang();
     puff(e.x + e.w / 2, e.y + 16, 10, 'rgba(255,240,200,1)', 3, true);
     if (e.hp <= 0) {
-      killGummy(e); coinsGot += 2; sfx.coin(); puff(e.x + e.w / 2, e.y, 8, 'rgba(255,210,110,1)', 2, true);
+      killGummy(e); coinsGot += 2, lightUp(2); sfx.coin(); puff(e.x + e.w / 2, e.y, 8, 'rgba(255,210,110,1)', 2, true);
     }
   }
 }
@@ -1248,7 +1350,7 @@ function updateOrbs() {
       if (e.dead > 0 || e.calm || e.friendly) continue;
       if (hitR(box, e)) {
         e.hp -= ORB_DMG; e.flash = 8; e.kb = (o.vx > 0 ? 1 : -1) * 7; freeze = 4; shake = Math.max(shake, 5); sfx.orbHit();
-        if (e.hp <= 0) { killGummy(e); coinsGot += 2; sfx.coin(); }
+        if (e.hp <= 0) { killGummy(e); coinsGot += 2, lightUp(2); sfx.coin(); }
         dead = true; break;
       }
     }
@@ -1275,7 +1377,7 @@ function update() {
   if (shake > 0) shake *= 0.85;
   if (shake < 0.3) shake = 0;
   stepFlip();
-  if (heroFlash > 0) heroFlash--;
+  if (heroFlash > 0) heroFlash--; if (glowT > 0) glowT--;
   if (state === 'play') growMoss();
   embers.forEach(e => { e.y += e.vy; e.x += Math.sin(tick * 0.01 + e.ph) * 0.2; if (e.y < -10) { e.y = VH + 10; e.x = Math.random() * VW; } });
   for (let i = particles.length - 1; i >= 0; i--) {
@@ -1353,7 +1455,11 @@ function update() {
 
   updateMovers();
   p.x += p.vx;
-  for (const s of solids) if (hitR(p, s)) p.x = p.vx > 0 ? s.x - p.w : s.x + s.w;
+  for (const s of solids) if (hitR(p, s)) {   // ступень до STEP px — герой просто взбирается, выше — упирается как в стену
+    const lift = p.y + p.h - s.y;
+    if (p.onGround && lift > 0 && lift <= STAIR && p.vy >= 0 && p.dash <= 0 && !solids.some(o => o !== s && hitR({x: p.x, y: s.y - p.h, w: p.w, h: p.h}, o))) p.y = s.y - p.h;
+    else p.x = p.vx > 0 ? s.x - p.w : s.x + s.w;
+  }
   p.x = Math.max(0, Math.min(room.w - p.w, p.x));
 
   const vy0 = p.vy, was = p.onGround;
@@ -1361,6 +1467,10 @@ function update() {
   for (const s of solids) if (hitR(p, s)) {
     if (p.vy > 0) { p.y = s.y - p.h; p.onGround = true; } else p.y = s.y + s.h;
     p.vy = 0;
+  }
+  if (!p.onGround && was && vy0 >= 0 && p.dash <= 0 && p.stun === 0) {   // спуск по ступеням: прилипаем к ближайшей ступени вниз
+    let best = null; for (const s of solids) if (p.x + p.w > s.x && p.x < s.x + s.w && s.y >= p.y + p.h - 1 && s.y - (p.y + p.h) <= STAIR + 2 && (best === null || s.y < best)) best = s.y;
+    if (best !== null) { p.y = best - p.h; p.onGround = true; p.vy = 0; }
   }
   if (p.onGround && !was && vy0 > 2.5) p.land = 16;
   if (p.onGround) p.jumpT = 99; else if (p.jumpT < 99) p.jumpT++;
@@ -1386,7 +1496,7 @@ function update() {
     }
   }
   for (const c of coins) if (!c.got && Math.hypot(p.x + p.w / 2 - c.x, p.y + p.h / 2 - c.y) < 26) {
-    c.got = true; world.taken[room.id][c.i] = true; coinsGot++; sfx.coin(); puff(c.x, c.y, 10, 'rgba(255,210,110,1)', 2, true);
+    c.got = true; world.taken[room.id][c.i] = true; coinsGot++, lightUp(1); sfx.coin(); puff(c.x, c.y, 10, 'rgba(255,210,110,1)', 2, true);
   }
   updateOrbReward(); updateGhosts();
   for (const it of items) if (!it.got && (!it.lost || ghostLit(it)) && Math.hypot(p.x + p.w / 2 - it.x, p.y + p.h / 2 - it.y) < 40) collectItem(it);
@@ -1394,6 +1504,7 @@ function update() {
   for (const b of barriers) if (b.kind === 'gate' && b.open && b.oy < 1) b.oy = Math.min(1, b.oy + 0.02);
   for (let i = enemies.length - 1; i >= 0; i--) {
     const e = enemies[i];
+    if (e.kind !== 'clock' && !e.air && !(e.dead > 0)) snapMob(e);
     if (e.kind === 'clock') { updateClockMinion(e, p, jd); if (state !== 'play') return; continue; }
     if (e.kind === 'cr') { updateCr(e, p, jd); if (state !== 'play') return; continue; }
     if (e.flash > 0) e.flash--;
@@ -1850,7 +1961,7 @@ function renderPlayer(ps, cx, fy, face, alpha) {
   [[178, 120, 176, 190], [204, 96, 206, 150], [196, 250, 199, 318], [520, 110, 522, 150], [330, 340, 400, 342], [260, 82, 330, 80]].forEach(q => { ctx.beginPath(); ctx.moveTo(q[0], q[1]); ctx.lineTo(q[2], q[3]); ctx.stroke(); });
   ctx.strokeStyle = C_OUT; ctx.lineWidth = 17;
   if (HG > 0) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; const hg = ctx.createRadialGradient(353, 205, 10, 353, 205, 260);
-    hg.addColorStop(0, 'rgba(255,236,150,' + Math.min(0.5, 0.12 + 0.22 * HG) + ')'); hg.addColorStop(1, 'rgba(255,200,60,0)'); ctx.fillStyle = hg; rrect(152, 60, 402, 306, 16); ctx.fill(); ctx.restore(); }
+    hg.addColorStop(0, 'rgba(255,236,150,' + Math.min(0.5, 0.3 * HG) + ')'); hg.addColorStop(1, 'rgba(255,200,60,0)'); ctx.fillStyle = hg; rrect(152, 60, 402, 306, 16); ctx.fill(); ctx.restore(); }
   const ery = Math.max(5, 68 * ps.eye * (1 - 0.93 * (ps.blink || 0)));
   ctx.fillStyle = '#0b0705';
   ctx.beginPath(); ctx.ellipse(318 + ps.es, 225 + ps.ey, 22, ery, 0, 0, 7); ctx.fill();
@@ -1931,7 +2042,7 @@ function rainAttack(n, warn) {
   for (let i = 0; i < n; i++) { const x = Math.max(ARENA_L + 40, Math.min(ARENA_R - 40, px + (i - (n - 1) / 2) * 120 + (Math.random() - 0.5) * 50)); rains.push({x, st: 'warn', t: 0, warn: warn + i * 5, y: 0, vy: 0}); }
 }
 function finishMercy(b) {
-  b.state = 'sleep'; b.t = 0; bossDead = true; world.keeperSpared = true; world.keeperMercy = false; unlockArena(); doorMsg = 220; coinsGot += 25;
+  b.state = 'sleep'; b.t = 0; bossDead = true; world.keeperSpared = true; world.keeperMercy = false; unlockArena(); doorMsg = 220; coinsGot += 25, lightUp(25);
   sfx.lantern(); sfx.coin(); puff(b.x, b.y - 100, 36, 'rgba(255,230,160,1)', 4, true); shake = 8;
   showPopup('ХРАНИТЕЛЬ ЗАСНУЛ', 'Свет нельзя украсть — его можно только отдать', '#ffe9b0');
 }
@@ -2079,7 +2190,7 @@ function updateBoss() {
         puff(b.x + (Math.random() - 0.5) * 30, b.y - 20, 2, 'rgba(190,255,130,1)', 1.6, true);
         puff(b.x, b.y + 10, 1, 'rgba(255,200,110,1)', 1.2, true);
         if (b.y < -440) {
-          b.state = 'dead'; bossDead = true; unlockArena(); doorMsg = 220; coinsGot += 25; sfx.lantern(); sfx.coin();
+          b.state = 'dead'; bossDead = true; unlockArena(); doorMsg = 220; coinsGot += 25, lightUp(25); sfx.lantern(); sfx.coin();
           puff(b.x, 6, 40, 'rgba(255,230,160,1)', 5, true); shake = 10;
         }
       }
@@ -2554,7 +2665,7 @@ const AMB = {gate: 0.2, chains: 0.34, shaft: 0.34, crypt: 0.4, bridge: 0.18, spi
 const AMB_COL = {chains: '10,18,28', shaft: '6,10,20', crypt: '4,6,34', bridge: '16,12,26', spires: '60,24,40'};
 function heroK(t) {
   if (!world || !P) return 0;
-  let k = 0.55 + 0.45 * Math.min(1, Math.sqrt(coinsGot / 55));
+  let k = glowT > 0 ? Math.min(1, glowT / 160) * (0.75 + 0.4 * Math.min(1, glowT / 700)) : 0;   // яркость: сразу после лампочек, потом плавно гаснет
   if (hp <= 1 || hp <= world.maxHp * 0.25) k *= (Math.sin(t * 0.8) * Math.sin(t * 0.31) > 0.1) ? 0.9 : 0.22;
   else k *= 0.94 + 0.06 * Math.sin(t * 0.07);
   if (P.cast > 0) k += 0.5 * (1 - P.cast / ORB_CAST);
@@ -2582,7 +2693,7 @@ function drawLightPass(t, cx, cyy) {
   if (!room || !P || !world) return;
   const id = room.id; let A = AMB[id]; if (A === undefined) A = (room.theme === 'hall' || room.theme === 'tower') ? 0.12 : 0.2; A *= 1 - 0.3 * prog();
   if (!lightCv) { lightCv = mk(VW, VH); lctx = lightCv.getContext('2d'); }
-  const k = heroK(t), hx = P.x + P.w / 2 - cx, hy = P.y + P.h - 57 - cyy, R = 110 + 130 * Math.min(k, 1.6);
+  const k = heroK(t), hx = P.x + P.w / 2 - cx, hy = P.y + P.h - 57 - cyy, R = 84 + 150 * Math.min(k, 1.6);
   lctx.globalCompositeOperation = 'source-over'; lctx.globalAlpha = 1; lctx.clearRect(0, 0, VW, VH);
   lctx.fillStyle = 'rgba(' + (AMB_COL[id] || '8,4,16') + ',' + A + ')'; lctx.fillRect(0, 0, VW, VH);
   lctx.globalCompositeOperation = 'destination-out';
@@ -2592,8 +2703,8 @@ function drawLightPass(t, cx, cyy) {
   lctx.globalAlpha = 0.85; litSpots.forEach(q => lctx.drawImage(holeSpr, q.x - cx - q.r, q.y - cyy - q.r, q.r * 2, q.r * 2));
   ctx.drawImage(lightCv, 0, 0);
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
-  ctx.globalAlpha = Math.min(0.6, 0.16 + 0.2 * k); ctx.drawImage(glowGold, hx - R * 1.1, hy - R * 1.1, R * 2.2, R * 2.2);
-  ctx.globalAlpha = Math.min(0.9, 0.3 + 0.3 * k); ctx.drawImage(glowGold, hx - 36, hy - 36, 72, 72);
+  ctx.globalAlpha = Math.min(0.6, 0.3 * k); ctx.drawImage(glowGold, hx - R * 1.1, hy - R * 1.1, R * 2.2, R * 2.2);
+  ctx.globalAlpha = Math.min(0.9, 0.5 * k); ctx.drawImage(glowGold, hx - 36, hy - 36, 72, 72);
   if (ROOM_FX[id]) { ctx.globalAlpha = 1; ctx.globalCompositeOperation = id === 'chains' || id === 'bridge' ? 'source-over' : 'lighter'; ROOM_FX[id](t, cx); }
   ctx.restore();
 }
@@ -2673,7 +2784,7 @@ function drawStoryFront(t, cx) {
       ctx.save(); ctx.fillStyle = 'rgba(110,140,210,0.2)'; ctx.beginPath(); ctx.ellipse(px, p.y + 3, rx, 4, 0, 0, 7); ctx.fill();
       ctx.globalCompositeOperation = 'lighter';
       lanterns.forEach(l => { if (l.lit && Math.abs(l.x - px) < 260) { ctx.globalAlpha = 0.5 * (1 - Math.abs(l.x - px) / 260); ctx.drawImage(glowWarm, px - 26, p.y - 4, 52, 16); } });
-      if (Math.abs(hx - px) < rx + 20) { const k = Math.min(1, HG); ctx.globalAlpha = 0.25 + 0.3 * k; ctx.drawImage(glowGold, hx - 26, p.y - 5, 52, 18);
+      if (Math.abs(hx - px) < rx + 20) { const k = Math.min(1, HG); ctx.globalAlpha = 0.45 * k; ctx.drawImage(glowGold, hx - 26, p.y - 5, 52, 18);
         if (P.onGround && tick % 40 < 20) { ctx.globalAlpha = 0.3 * (1 - (tick % 40) / 20); ctx.strokeStyle = '#cfe0ff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(hx, p.y + 3, 6 + (tick % 40), 2 + (tick % 40) * 0.12, 0, 0, 7); ctx.stroke(); } }
       ctx.restore();
     }
@@ -2744,10 +2855,10 @@ function draw() {
     const a = platArt[i]; ctx.drawImage(a.cv, p.x - a.ox, p.y - a.oy);
   });
   drawGhostPlats(t);
-  drawMasses(t);
+  drawMasses(t); drawRuins(t, cx);
   drawDoors(t); drawHazards(t); drawMovers(t);
   if (room.id === 'arena') drawArenaFloor(t);
-  if (hall) drawHallWater(t, cx);
+  if (hall) { drawHallWater(t, cx); L.forEach((p, i) => { if (p.g && p.y < GROUND_Y - 1 && vis(p.x, p.w)) { const a = platArt[i]; ctx.drawImage(a.cv, p.x - a.ox, p.y - a.oy); } }); }
   drawBarriers(t);
   drawExitGlow(t);
   drawStoryFront(t, cx);
@@ -2848,18 +2959,18 @@ function centerText(txt, y, font, col, alpha, spacing) {
   ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 12; ctx.fillText(txt, VW / 2, y); ctx.restore();
 }
 let hintT = 0;
-const GAME_VER = '0.25 alpha';
+const GAME_VER = '0.26 alpha';
 const VER_BOX = {x: 10, y: 8, w: 150, h: 34}, VER_BOX_MAP = {x: VW - 166, y: VH - 48, w: 150, h: 34};
 const verBox = () => state === 'map' ? VER_BOX_MAP : VER_BOX;
 let aboutOpen = false;
 const CHANGELOG = [
-  'Треугольные стражи: Врата Эмберфолла и Цепные залы',
-  'Страж Времени — хранитель прохода у Врат',
-  'Серый шипастый рыцарь в Цепных залах',
-  'Розовые гумми с трещинами и свечением — в Склепе',
-  'Мох в Зале Лампочек: стоит, прыгает, парит',
-  'Жёлтый Тик и синий Летун — Верхние шпили',
-  'Часы-пауки с тонкими лапами; в башне есть элитный',
+  'Рельеф: холмы, овраги и ступени развалин',
+  'Герой сам шагает вверх и вниз по ступеням',
+  'Руины: арки, колонны, стены, хижины, повозки',
+  'Примерно половина земли неровная, половина ровная',
+  'Враги и лампочки подстроены под рельеф',
+  'Свечение героя: вспышка от лампочек и угасание',
+  'Из 0.25: новые существа с живой анимацией',
   'Из 0.24: гирлянды, лестницы, меньше лампочек',
 ];
 // ---- сообщения: небольшие, с мягкой полосой и тонкими линиями ----
@@ -3783,7 +3894,14 @@ let shots = [], rolls = [], hazGears = [], movers = [], hazards = [], trialOn = 
 const TOWER_STEP = 60 / 84 / 2;
 const BRASS = '#c8963e', BRASS_D = '#7a5324', BRASS_L = 'rgba(255,226,150,0.55)', METAL = '#413757', METAL_D = '#2c2442', CREAM = '#f0dca8';
 
-function makeMob(d) { return d.kind === 'clock' ? makeClock(d) : d.kind === 'cr' ? makeCr(d) : makeGummy(d); }
+function topAt(R, x) { let b = null; for (const p of R.plats) if (p.g && x >= p.x && x <= p.x + p.w) b = b === null ? p.y : Math.min(b, p.y); return b; }
+function snapMob(e) {
+  const cx = e.x + e.w / 2, feet = e.y + e.h; let best = null;
+  for (const s of solids) if (cx >= s.x && cx <= s.x + s.w && s.y >= feet - 26 && s.y <= feet + 70 && (best === null || s.y < best)) best = s.y;
+  if (best === null) return; if (e.mode === 'hop') { e.gy = best - e.h; return; }
+  e.y += Math.max(-4, Math.min(8, best - e.h - e.y));
+}
+function makeMob(d) { if (d.y === undefined && d.kind !== 'clock') { const g = topAt(room, d.x + 18); if (g !== null && g !== GROUND_Y) d = {...d, y: g}; } return d.kind === 'clock' ? makeClock(d) : d.kind === 'cr' ? makeCr(d) : makeGummy(d); }
 function makeClock(d) {
   return {kind: 'clock', x: d.x - 15, y: d.y - 17, hx: d.x, hy: d.y, w: 30, h: 34, min: d.min !== undefined ? d.min : d.x - 200, max: d.max !== undefined ? d.max : d.x + 200,
           hp: d.elite ? 3 : 1, elite: !!d.elite, ph: Math.random() * 6, pdir: 1, f: 1, flash: 0, kb: 0, swing: 0, dead: 0, chase: false, atk: 0, vx: 0, summoned: !!d.summoned};
@@ -3828,7 +3946,7 @@ function updateCr(e, p, jd) {
   if (hitR(p, e)) {
     if (p.vy > 0 && p.y + p.h - p.vy <= e.y + 14) {
       sfx.stomp(); p.vy = jd ? -11.5 : -8.5; p.djUsed = false;
-      if (--e.hp <= 0) { killGummy(e); coinsGot += 2; } else { e.flash = 8; e.kb = p.face * 6; }
+      if (--e.hp <= 0) { killGummy(e); coinsGot += 2, lightUp(2); } else { e.flash = 8; e.kb = p.face * 6; }
     } else { const h0 = hp; hurt(e.x + e.w / 2, false); if (room.flip && hp < h0) flipWorld(); }
   } else if (sp && hitR(p, sp)) hurt(e.x + e.w / 2, false);
 }
@@ -4354,7 +4472,7 @@ function updateClockBoss() {
     case 'mech': b.spin = 1; if (b.t === 30) activateMechanism(); if (b.t > 100) { b.state = 'idle'; b.t = 0; } break;
     case 'dying':
       if (b.t % 3 === 0) puff(b.x + (Math.random() - 0.5) * 130, b.y - Math.random() * 210, 5, Math.random() < 0.5 ? 'rgba(255,200,110,1)' : 'rgba(190,130,255,1)', 3, true);
-      if (b.t > 110) { b.state = 'dead'; bossDead = true; unlockArena(); coinsGot += 30; showPopup('ЧАСОВЩИК', 'Стрелки встали ровно. Он наконец отдыхает.', '#ffd38a'); sfx.lantern(); sfx.coin(); puff(b.x, b.y - 120, 50, 'rgba(255,210,110,1)', 5, true); shake = 14; movers = []; rebuildSolids(); }
+      if (b.t > 110) { b.state = 'dead'; bossDead = true; unlockArena(); coinsGot += 30, lightUp(30); showPopup('ЧАСОВЩИК', 'Стрелки встали ровно. Он наконец отдыхает.', '#ffd38a'); sfx.lantern(); sfx.coin(); puff(b.x, b.y - 120, 50, 'rgba(255,210,110,1)', 5, true); shake = 14; movers = []; rebuildSolids(); }
       break;
   }
   for (let i = shots.length - 1; i >= 0; i--) {
