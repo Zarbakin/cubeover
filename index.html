@@ -464,8 +464,8 @@ const ROOMS = {
     plats: [G(0, 880), G(1030, 970), F(560, 300, 150), F(1180, 300, 200)],
     items: [{type: 'shard', id: 's1', x: 1865, y: 366}],
     bulbs: [[590, 270], [690, 270], [820, 372], [900, 330], [960, 300], [1100, 372], [1200, 372], [1260, 372], [1330, 372], [1460, 372], [1560, 372], [1660, 372]],
-    mobs: [{kind: 'cr', type: 'guard', x: 700, min: 600, max: 860}, {kind: 'cr', type: 'guard', x: 1150, min: 1060, max: 1450}, {kind: 'cr', type: 'warden', x: 1560, min: 1500, max: 1700}], lanterns: [380], banners: [700, 1500],
-    npcs: [{id: 'moss', name: 'МОХ', top: 52, x: 1280, y: 300, scene: 'gate'}],
+    mobs: [{x: 700, min: 600, max: 860}, {kind: 'cr', type: 'flyer', x: 1150, y: 234}, {x: 1560, min: 1500, max: 1700, hp: 3}], lanterns: [380], banners: [700, 1500],
+    npcs: [{id: 'moss', name: 'МОХ', top: 74, x: 1280, y: 300, scene: 'gate'}],
     exits: [EX(1984, 100, 16, 200, 'chains', 70, 400, 1)]
   },
   // 2. Цепные залы: первые враги и прыжки по цепным платформам.
@@ -473,7 +473,7 @@ const ROOMS = {
     name: 'Цепные залы', w: 2800, y0: 0, theme: 'ruins', music: 'calm', map: [4, 3, 6, 1],
     plats: [G(0, 500), G(650, 400), G(1530, 570), G(2250, 550), F(1090, 345, 100), F(1240, 300, 100), F(1390, 345, 100), F(700, 290, 140), F(1700, 300, 150), F(2300, 300, 160)],
     bulbs: [[300, 372], [420, 372], [770, 255], [830, 255], [760, 372], [900, 372], [1000, 372], [1140, 310], [1290, 265], [1440, 310], [1600, 372], [1770, 265], [1850, 372], [2000, 372], [2340, 265], [2400, 372], [2560, 372], [2700, 372]],
-    mobs: [{x: 720, min: 660, max: 1040}, {kind: 'cr', type: 'knight', x: 1600, min: 1540, max: 1800}, {kind: 'cr', type: 'guard', weak: true, x: 1850, min: 1800, max: 2090}, {kind: 'cr', type: 'knight', x: 2400, min: 2260, max: 2780}],
+    mobs: [{x: 720, min: 660, max: 1040}, {x: 1600, min: 1540, max: 1800, hp: 3}, {kind: 'cr', type: 'flyer', x: 1850, y: 234}, {x: 2400, min: 2260, max: 2780, hp: 3}],
     lanterns: [], banners: [400, 1800],
     exits: [EX(0, 200, 14, 200, 'gate', 1900, 400, -1), EX(2786, 200, 14, 200, 'shaft', 70, 400, 1)]
   },
@@ -526,7 +526,7 @@ const ROOMS = {
     levers: [{id: 'lv1', x: 1800, y: 140}],
     items: [{type: 'shard', id: 's3', x: 2850, y: 366}],
     bulbs: [[200, 372], [400, 372], [740, 310], [1040, 265], [960, 372], [1100, 372], [1220, 372], [1500, 372], [1600, 255], [1780, 105], [1860, 105], [1900, 372], [2150, 372], [2290, 265], [2400, 372], [2560, 372]],
-    mobs: [{x: 1000, min: 890, max: 1290, hp: 3}, {kind: 'cr', type: 'tick', x: 1550, min: 1460, max: 1700}, {kind: 'cr', type: 'flyer', x: 1800, y: 230}, {kind: 'cr', type: 'tick', x: 2250, min: 2080, max: 2600}, {kind: 'cr', type: 'flyer', x: 950, y: 240}],
+    mobs: [{x: 1000, min: 890, max: 1290, hp: 3}, {x: 1550, min: 1460, max: 1700}, {kind: 'cr', type: 'flyer', x: 1800, y: 230}, {kind: 'cr', type: 'flyer', x: 2250, y: 234}, {kind: 'cr', type: 'flyer', x: 950, y: 240}],
     lanterns: [], banners: [300, 1000, 2200],
     exits: [EX(0, 200, 14, 200, 'shaft', 1200, -770, -1), EX(2986, 100, 14, 200, 'ante', 70, 400, 1)]
   },
@@ -536,7 +536,7 @@ const ROOMS = {
     plats: [G(0, 1600)],
     barriers: [{kind: 'gate', id: 'sealG', lever: 'lv1', x: 1200, y: 100, w: 40, h: 300}],
     bulbs: [[300, 372], [600, 372], [1050, 372], [1100, 372], [1400, 372]],
-    npcs: [{id: 'moss', name: 'МОХ', top: 52, x: 900, y: 400, scene: 'ante'}],
+    npcs: [{id: 'moss', name: 'МОХ', top: 74, x: 900, y: 400, scene: 'ante'}],
     mobs: [{x: 800, min: 620, max: 1150, hp: 3}], lanterns: [500], banners: [300, 900, 1400],
     exits: [EX(0, 200, 14, 200, 'spires', 2900, 400, -1), EX(1586, 200, 14, 200, 'arena', 70, 400, 1)]
   },
@@ -556,7 +556,7 @@ Object.assign(ROOMS, {
     plats: [G(0, 520), G(660, 480), G(1290, 510), F(400, 300, 140), F(900, 290, 140), F(1170, 330, 110)],
     bulbs: [[250, 372], [440, 265], [570, 340], [760, 372], [950, 255], [1100, 372], [1225, 295], [1400, 372], [1550, 372], [1680, 372]],
     mobs: [{x: 760, min: 670, max: 1130, hp: 3}, {x: 1500, min: 1300, max: 1780, hp: 3},
-           {kind: 'clock', x: 520, y: 250, min: 300, max: 700}, {kind: 'clock', x: 1250, y: 230, min: 1050, max: 1500}],
+           {kind: 'cr', type: 'flyer', x: 520, y: 250}, {kind: 'cr', type: 'flyer', x: 1250, y: 230}],
     lanterns: [300], banners: [620, 1420],
     exits: [EX(0, 200, 14, 200, 'arena', 1200, 400, -1), EX(1786, 200, 14, 200, 'tw_climb1', 70, 400, 1)]
   },
@@ -567,7 +567,7 @@ Object.assign(ROOMS, {
             F(600, -350, 140), F(870, -470, 150), F(560, -640, 140), F(250, -790, 140), F(560, -940, 140), F(850, -1050, 250)],
     hazards: [{x: 600, y: 120, w: 50}, {x: 355, y: -250, w: 50}, {x: 280, y: -790, w: 50}],
     bulbs: [[250, 372], [635, 275], [925, 180], [630, 85], [375, -10], [115, -125], [400, -285], [670, -385], [945, -505], [630, -675], [320, -825], [630, -975], [940, -1085], [1020, -1085]],
-    mobs: [{kind: 'clock', x: 700, y: 20, min: 520, max: 900}, {kind: 'clock', x: 450, y: -520, min: 250, max: 750}, {kind: 'clock', x: 700, y: -880, min: 450, max: 950}],
+    mobs: [{kind: 'cr', type: 'flyer', x: 700, y: 20}, {kind: 'cr', type: 'flyer', x: 450, y: -520}, {kind: 'cr', type: 'flyer', x: 700, y: -880}],
     lanterns: [], banners: [],
     lamps: [[200, 120], [900, -60], [200, -420], [900, -780]],
     exits: [EX(0, 200, 14, 200, 'tw_entry', 1700, 400, -1), EX(1086, -1150, 14, 100, 'tw_arena', 70, 400, 1)]
@@ -579,9 +579,9 @@ Object.assign(ROOMS, {
     fallTo: {x0: 150, x1: 250, to: 'tw_climb1', at: [960, -1050], face: -1},
     barriers: [{kind: 'gate', id: 'trialG', lever: 'trialA', x: 1340, y: 100, w: 40, h: 300}],
     trial: {id: 'trialA', trigX: 520, lockX: 0, reward: {type: 'shard', id: 's4', x: 750, y: 366},
-            waves: [[{kind: 'clock', x: 300, y: 200}, {kind: 'clock', x: 900, y: 180}],
-                    [{kind: 'clock', x: 300, y: 160}, {kind: 'clock', x: 700, y: 140}, {kind: 'clock', x: 1100, y: 170}],
-                    [{kind: 'clock', x: 400, y: 150}, {kind: 'clock', x: 800, y: 120}, {kind: 'clock', x: 1100, y: 160}, {kind: 'clock', x: 650, y: 220}]]},
+            waves: [[{kind: 'cr', type: 'flyer', x: 300, y: 200}, {kind: 'cr', type: 'flyer', x: 900, y: 180}],
+                    [{kind: 'cr', type: 'flyer', x: 300, y: 160}, {kind: 'cr', type: 'flyer', x: 700, y: 140}, {kind: 'cr', type: 'flyer', x: 1100, y: 170}],
+                    [{kind: 'cr', type: 'flyer', x: 400, y: 150}, {kind: 'cr', type: 'flyer', x: 800, y: 120}, {kind: 'cr', type: 'flyer', x: 1100, y: 160}, {kind: 'cr', type: 'flyer', x: 650, y: 220}]]},
     bulbs: [[90, 372], [455, 255], [600, 372], [925, 255], [1000, 372], [1205, 185], [1250, 372]],
     mobs: [], lanterns: [330], banners: [700],
     lamps: [[180, 70], [560, 90], [980, 80], [1300, 70]],
@@ -604,7 +604,7 @@ Object.assign(ROOMS, {
             F(640, -420, 170), F(950, -560, 150), F(620, -720, 140), F(300, -870, 140), F(620, -1010, 140), F(900, -1100, 200)],
     hazards: [{x: 565, y: 95, w: 50}, {x: 690, y: -420, w: 60}, {x: 345, y: -870, w: 50}],
     bulbs: [[250, 372], [595, 265], [320, 160], [600, 60], [875, -45], [610, -210], [320, -375], [725, -455], [1025, -595], [690, -755], [370, -905], [690, -1045], [1000, -1135]],
-    mobs: [{kind: 'clock', x: 650, y: 60, min: 450, max: 900}, {kind: 'clock', x: 500, y: -300, min: 250, max: 800}, {kind: 'clock', x: 700, y: -650, min: 450, max: 1000}, {kind: 'clock', x: 450, y: -960, min: 300, max: 800, elite: true}],
+    mobs: [{kind: 'cr', type: 'flyer', x: 650, y: 60}, {kind: 'cr', type: 'flyer', x: 500, y: -300}, {kind: 'cr', type: 'flyer', x: 700, y: -650}, {kind: 'cr', type: 'flyer', x: 450, y: -960}],
     lanterns: [], banners: [],
     lamps: [[200, 100], [900, -120], [200, -480], [900, -840]],
     exits: [EX(0, 200, 14, 200, 'tw_arena', 1400, 400, -1), EX(1086, -1200, 14, 100, 'tw_boss', 70, 400, 1)]
@@ -1914,7 +1914,7 @@ function drawArm(sx, sy, a1, a2, sword, sa) {
 function drawLeg(hx, hy, ang, knee) {
   ctx.save(); ctx.translate(hx, hy); ctx.rotate(ang);
   rrect(-44, -8, 88, 96, 12); part(C_Y);                 // бедро
-  if (SHORTS) { rrect(-49, -14, 98, 66, 13); part('#6a3a24'); ctx.fillStyle = '#4a2616'; ctx.fillRect(-45, 40, 90, 8); ctx.strokeStyle = 'rgba(255,190,120,0.35)'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-30, 2); ctx.lineTo(-30, 30); ctx.stroke(); ctx.strokeStyle = C_OUT; ctx.lineWidth = 17; }   // шорты
+  if (SHORTS) { rrect(-49, -14, 98, 100, 13); part('#6a3a24'); ctx.fillStyle = '#4a2616'; ctx.fillRect(-45, 70, 90, 10); ctx.strokeStyle = 'rgba(255,190,120,0.35)'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-30, 2); ctx.lineTo(-30, 58); ctx.stroke(); ctx.strokeStyle = C_OUT; ctx.lineWidth = 17; }   // шорты
   ctx.translate(0, 84); ctx.rotate(knee);
   rrect(-40, -4, 80, 82, 10); part(C_Y);                 // голень — простой блок, без ботинка и пальцев
   ctx.restore();
@@ -2095,7 +2095,7 @@ function renderPlayer(ps, cx, fy, face, alpha) {
   drawArm(462, 442, ps.aL1, ps.aL2, false, 0);   // дальняя рука: за корпусом, прячется при махе назад
   // торс
   ctx.beginPath(); ctx.moveTo(232, 395); ctx.lineTo(458, 395); ctx.lineTo(462, 688); ctx.lineTo(208, 688); ctx.lineTo(214, 500); ctx.closePath(); part(C_Y);
-  if (cape) { ctx.beginPath(); ctx.moveTo(210, 634); ctx.lineTo(461, 634); ctx.lineTo(462, 690); ctx.lineTo(207, 690); ctx.closePath(); part('#6a3a24'); ctx.fillStyle = '#c9a24a'; ctx.fillRect(210, 640, 251, 8); }   // пояс шорт
+  if (cape) { ctx.beginPath(); ctx.moveTo(211, 566); ctx.lineTo(461, 566); ctx.lineTo(462, 692); ctx.lineTo(207, 692); ctx.closePath(); part('#6a3a24'); ctx.fillStyle = '#c9a24a'; ctx.fillRect(211, 574, 250, 9); }   // пояс шорт
   // ремень и сумка (от ближнего плеча к дальнему бедру)
   ctx.beginPath(); ctx.moveTo(238, 388); ctx.lineTo(304, 384); ctx.lineTo(452, 506); ctx.lineTo(394, 548); ctx.closePath(); part(C_BR);
   ctx.strokeStyle = C_BRL; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(268, 400); ctx.lineTo(412, 518); ctx.stroke();
@@ -3228,19 +3228,18 @@ function centerText(txt, y, font, col, alpha, spacing) {
   ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 12; ctx.fillText(txt, VW / 2, y); ctx.restore();
 }
 let hintT = 0;
-const GAME_VER = '0.28 alpha';
+const GAME_VER = '0.29 alpha';
 const VER_BOX = {x: VW - 166, y: 14, w: 150, h: 34}, VER_BOX_MAP = {x: VW - 166, y: VH - 48, w: 150, h: 34};
 const verBox = () => state === 'map' ? VER_BOX_MAP : VER_BOX;
 let aboutOpen = false;
 const CHANGELOG = [
+  'Остались только гумми и летающие мобы; боссы без изменений',
+  'Мох теперь — зелёное пушистое существо из Зала Лампочек',
+  'Шорты длиннее — до колен, пояс на уровне живота',
+  'Плащ и шорты выдаются вместе с двойным прыжком',
   'Новый главный экран и выбор из 3 слотов сохранений',
-  'В слоте: процент прохождения, время игры и дата',
-  'Настройки: звук, громкость, тряска экрана',
   'Мосты-арки над пропастями вместо ниш с осколками',
   'Меч нужно найти у Врат; бирка — в Зале Лампочек',
-  'Состаренная кладка, меч со следом удара',
-  'Плащ и шорты — выдаются с двойным прыжком',
-  'Предметы способностей стали компактнее',
 ];
 // ---- сообщения: небольшие, с мягкой полосой и тонкими линиями ----
 function msgBand(y, h, a) {
@@ -4418,9 +4417,13 @@ function drawNpc(n, t) {
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.22 + 0.06 * Math.sin(t * 0.05); ctx.drawImage(glowRed, x - 90, y - 150, 180, 180); ctx.restore();
     renderRobot(robotPose(n, t, near, talking, speak), x, y, face);
   } else {
-    ctx.save(); ctx.globalAlpha = 0.35; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(x, y + 1, 15, 3, 0, 0, 7); ctx.fill(); ctx.restore();
-    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.3 + 0.08 * Math.sin(t * 0.05); ctx.drawImage(glowGreen, x - 42, y - 66, 84, 84); ctx.restore();
-    renderNpc(npcPose(n, t, near, talking, speak), x, y, face, t);
+    ctx.save(); ctx.globalAlpha = 0.35; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(x, y + 1, 22, 4, 0, 0, 7); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.3 + 0.08 * Math.sin(t * 0.05); ctx.drawImage(glowGreen, x - 50, y - 70, 100, 100); ctx.restore();
+    // Мох — то самое зелёное пушистое существо с листиками (как в Зале Лампочек), только крупнее
+    ctx.save(); ctx.translate(x, y + bob * 0.4); ctx.scale(1.9, 1.9); ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.lineWidth = 2.6; ctx.strokeStyle = C_OUT; FL = false;
+    drawMoss({mode: 'still', f: face, x, y: 0, gy: 0, t: tick}, {t, ph: t * 0.05 + x});
+    if (talking) { ctx.fillStyle = '#1c2a0c'; if (mouthOpen) { ctx.beginPath(); ctx.ellipse(1.2, -8.4, 2.2, 2.6, 0, 0, 7); ctx.fill(); } }
+    ctx.restore();
   }
   // значок над головой: «…» или кнопка E
   if (state === 'play') {
